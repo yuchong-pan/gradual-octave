@@ -21,8 +21,8 @@ develop into a real project. Together, they should explore some
 meaningfully distinct project options (so, not just three variations
 on the same project).
 
-1. Add refinement and dependent function types to Java.
+1. Add refinement and dependent types to Java.
 
-2. Add gradual typing (via type annotations) to Erlang.
+2. Add contracts / gradual typing to Bash.
 
 3. Design a complexity analysis DSL that allows users to define syntax as functions of complexity, and accept code expressions to compute.
