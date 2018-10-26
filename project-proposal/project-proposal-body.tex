@@ -9,7 +9,7 @@ annotations. Gradual typing is a solution to combine the two type systems,
 proposed by \cite{siek2006gradual}. It is of increasing interest in the
 programming language community and has been adopted by many programming
 languages, both in the industry and in the academia, such as Typed Racket
-\cite{tobin2008design}, TypeScript \cite{bierman2014understanding} and
+\cite{tobin2006interlanguage}, TypeScript \cite{bierman2014understanding} and
 Reticulated Python \cite{vitousek2014design}.
 
 Octave is a scientific programming language with a dynamic type system. Because
@@ -30,6 +30,17 @@ translation into an internal cast calculus with the blame tracking
 \cite{siek2015refined}. In addition to that, type inference could be added to
 automatically deduce types at compile time. \cite{garcia2015principal}
 introduces an approach to gradual type inference.
+
+\section{Related Work}
+There have been many research publications and projects on adding gradual type
+systems to an existing dynamic language. Diamondback Ruby (DRuby) is an
+extension to the Ruby language that combines static and dynamic typing in Ruby
+with constraint-based type inference \cite{furr2009combining}. Typed Racket
+\cite{tobin2006interlanguage} recently began to support refinement and dependent
+function types as experimental features \cite{racket2017refinement}. Other
+similar projects include Typed Lua \cite{maidl2014typed} and Gradualtalk
+\cite{allende2014gradual} that brings an optional type system to Lua and to
+Smalltalk, respectively. Our project would largely benifit from these projects.
 
 \appendix
 
