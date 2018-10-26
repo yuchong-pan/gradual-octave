@@ -1,5 +1,24 @@
 \section{Introduction}
+Static and dynamic type systems have their respective advantages. Static typing
+allows early error detection and enforces code style in a collaborative setting.
+It is, however, acknowledged that dynamic languages are better for fast
+prototyping. Over the past several decades, researchers in the programming
+language community have been working on integrating static typing and dynamic
+typing in a single language, having programmers control the level of type
+annotations. Gradual typing is a solution to combine the two type systems,
+proposed by \cite{siek2006gradual}. It is of increasing interest in the
+programming language community and has been adopted by many programming
+languages, both in the industry and in the academia, such as Typed Racket
+\cite{tobin2008design}, TypeScript \cite{bierman2014understanding} and
+Reticulated Python \cite{vitousek2014design}.
 
+Octave is a scientific programming language with a dynamic type system. Because
+it has powerful matrix operations and is compatible with MATLAB scripts, it is
+widely used in statistics, mathematics and computer science communities for idea
+validation and fast prototyping. In this project, we propose a gradual type
+system for the Octave language to allow Octave programmers to annotate source
+code with optional type annotations, making Octave programs more robust and more
+suitable for production environments.
 
 \appendix
 
