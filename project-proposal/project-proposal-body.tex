@@ -20,7 +20,81 @@ system for the Octave language to allow Octave programmers to annotate source
 code with optional type annotations, making Octave programs more robust and more
 suitable for production environments.
 
+\section{Overview and Plans}
+In this project, we will add a gradual type system to the Octave language.
+Because of the time limitation of the course, we will be focusing on the static
+semantics. Future work is discussed in Section \ref{sec-future-work}. This means
+that our proposed gradual type system will mainly be used for static analysis
+and IDE tooling (e.g., code completion and refactoring, etc.), but not for
+runtime type checking. Therefore, this project is similar to type hints in
+Python \footnote{New in version 3.5.} and the type system of TypeScript.
+
+\subsection{How to Fulfill Background Research Report Milestone}
+We will be using the resources listed in Section \ref{sec-supporting-documents}
+as starting points and guidelines for us to work from as we explore the articles
+that focuses on gradual typing. We will cover its value in everyday programming
+practice as well as cover the technical elements.
+
+\subsection{How to Fulfill Proof-of-Concept Milestone}
+For the proof-of-concept milestone, we will be focusing on implementing a static
+type checker for the gradually-typed lambda calculus (GTLC) by following
+\cite{siek2012interpretations}. The gradually-typed lambda calculus can be
+regarded a core of gradually typed programming languages, and implementing a
+static type checker for it will help us gain deeper understanding of gradual
+type systems. The following grammar defines the syntax of the gradually-typed
+lambda calculus \cite{siek2012interpretations}.
+
+$$ \text{variables} \ x \quad \text{integers} \ n \quad \text{blame labels} \ l $$
+$$
+\begin{array}{llll}
+    \text{basic types} & B & ::= & \text{\tt int} \ | \ \text{\tt bool} \\
+    \text{types} & T & ::= & B \ | \ (\rightarrow T \ T) \ | \ \text{?} \\
+    \text{constants} & k & ::= & n \ | \ \text{\tt \# t} \ | \ \text{\tt \# t} \\
+    \text{operators} & op & ::= & \text{\tt inc} \ | \ \text{\tt dec} \ | \ \text{\tt zero?} \\
+    \text{expressions} & e & ::= & k \ | \ (op \ e \ l) \ | \ (\text{\tt if} \ e \ e \ e \ l) \ | \ x \ | \ (e \ e \ l) \ | \ \\
+    & & & (\lambda (x) \ e) \ | \ (\lambda (x : T) \ e) \ | \ (e : T \ l)
+\end{array}
+$$
+
+In addition, we are going to experiment various approaches to enforce type
+checking for matrix operations (e.g., matrix dimension checking), which are a
+significant component of the Octave language.
+
+\subsection{How to Fulfill Final Project Milestone}
+For the final project milestone, we would like to apply what we will have
+learned in the gradually-typed lambda calculus to the Octave language. To
+achieve this, we plan to implement a parser that converts Octave source code to
+abstract syntax trees in Racket, using parsing tools available in Racket.
+For practical reasons, we are going to implement the most significant subset of
+the Octave language to demonstrate the features of Octave. After parsing, we
+will implement a static type checker with matrix operation support for abstract
+syntax trees.
+
+\subsection{How to Fulfill Poster Milestone}
+Our poster will emphasize the usefulness it has for users when dealing with
+matrices, which will entice our peers to learn more about the project as well
+possibly integrating it. This is particularly useful for students involved in
+mathematics and statistic courses as they will be using software like Octave
+frequently. We will be including diagrams on how this project works so students
+can easily understand without having to read a large amount of text. We will try
+to include an easy way for students to learn more about this project topic. Some
+ideas include compiling a list of topics on a single webpage and including that
+on our poster. Another idea would be creating a QR code for students to scan and
+receive more information.
+
+\subsection{How This Can Be a Low-Risk Approach}
+This project has a low risk because researchers in the gradual typing community
+have been exploring designs of gradual type systems for many years. There have
+been many publications in this field and other related fields, among which we
+have compiled a list of resources that may be of particular importance for our
+project, listed in Section \ref{sec-supporting-documents}. For the language choice,
+Octave is an open source language compatible with MATLAB. This avoids copyright
+issues and ensures the audience of our project. In addition, there are many open
+source projects related to MATLAB/Octave parsing, which will help us with the
+parsing of Octave source code.
+
 \section{Future Work}
+\label{sec-future-work}
 Because of the time limitation of the course, this project will be mainly
 focusing on the static semantics of the proposed gradual type system for Octave.
 In the future, however, more work can be done to extend the proposed gradual
@@ -39,7 +113,7 @@ with constraint-based type inference \cite{furr2009combining}. Typed Racket
 \cite{tobin2006interlanguage} recently began to support refinement and dependent
 function types as experimental features \cite{racket2017refinement}. Other
 similar projects include Typed Lua \cite{maidl2014typed} and Gradualtalk
-\cite{allende2014gradual} that brings an optional type system to Lua and to
+\cite{allende2014gradual} which bring optional type systems to Lua and to
 Smalltalk, respectively. Our project would largely benifit from these projects.
 
 \appendix
