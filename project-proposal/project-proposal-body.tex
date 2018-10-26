@@ -56,19 +56,21 @@ $$
 \end{array}
 $$
 
-In addition, we are going to experiment various approaches to enforce type
-checking for matrix operations (e.g., matrix dimension checking), which are a
-significant component of the Octave language.
+In addition, we are going to build a parser that converts Octave source code to
+abstract syntax trees in Racket, using parsing tools available in Racket. For
+practical reasons, we plan to implement the most significant subset of the
+Octave language to demonstrate Octave-specific features.
 
 \subsection{How to Fulfill Final Project Milestone}
 For the final project milestone, we would like to apply what we will have
-learned in the gradually-typed lambda calculus to the Octave language. To
-achieve this, we plan to implement a parser that converts Octave source code to
-abstract syntax trees in Racket, using parsing tools available in Racket.
-For practical reasons, we are going to implement the most significant subset of
-the Octave language to demonstrate the features of Octave. After parsing, we
-will implement a static type checker with matrix operation support for abstract
-syntax trees.
+learned in the gradually-typed lambda calculus to the Octave language,
+implementing a static type checker for the proposed gradual counterpart of the
+Octave language. Additionally, we intend to enrich our proposed gradual type
+system with more domain-specific features, such as static dimension checking for
+matrix operations, as matrices are one of the most significant component of the
+Octave language. We plan to survey and experiment various approaches to enforce
+type checking for these language-specific features, for which we have seen
+several design choices.
 
 \subsection{How to Fulfill Poster Milestone}
 Our poster will emphasize the usefulness it has for users when dealing with
