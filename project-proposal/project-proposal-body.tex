@@ -43,7 +43,6 @@ regarded a core of gradually typed programming languages, and implementing a
 static type checker for it will help us gain deeper understanding of gradual
 type systems. The following grammar defines the syntax of the gradually-typed
 lambda calculus \cite{siek2012interpretations}.
-
 $$ \text{variables} \ x \quad \text{integers} \ n \quad \text{blame labels} \ l $$
 $$
 \begin{array}{llll}
@@ -55,6 +54,9 @@ $$
     & & & (\lambda (x) \ e) \ | \ (\lambda (x : T) \ e) \ | \ (e : T \ l)
 \end{array}
 $$
+Here, the dynamic type is denoted by {\tt ?}. The lambda expression
+$(\lambda(x) \ e)$ is a syntactic sugar of $(\lambda(x : \text{\tt ?}) \ e)$.
+The expression $(e : T \ l)$ is an explicit cast.
 
 In addition, we are going to build a parser that converts Octave source code to
 abstract syntax trees in Racket, using parsing tools available in Racket. For
