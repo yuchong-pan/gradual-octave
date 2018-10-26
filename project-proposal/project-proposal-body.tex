@@ -20,6 +20,17 @@ system for the Octave language to allow Octave programmers to annotate source
 code with optional type annotations, making Octave programs more robust and more
 suitable for production environments.
 
+\section{Future Work}
+Because of the time limitation of the course, this project will be mainly
+focusing on the static semantics of the proposed gradual type system for Octave.
+In the future, however, more work can be done to extend the proposed gradual
+type system. For instance, dynamic type checking could be added during the
+interpretation, properly tracking errors from source code. This can be done by
+translation into an internal cast calculus with the blame tracking
+\cite{siek2015refined}. In addition to that, type inference could be added to
+automatically deduce types at compile time. \cite{garcia2015principal}
+introduces an approach to gradual type inference.
+
 \appendix
 
 \begin{acks}
