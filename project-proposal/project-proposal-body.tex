@@ -30,7 +30,7 @@ runtime type checking. Therefore, this project is similar to type hints in
 Python \footnote{New in version 3.5.} and the type system of TypeScript.
 
 \subsection{How to Fulfill Background Research Report Milestone}
-We will be using the resources listed in Section \ref{sec-supporting-documents}
+We will be using the resources listed in Section \ref{sec-supporting-resources}
 as starting points and guidelines for us to work from as we explore the articles
 that focuses on gradual typing. We will cover its value in everyday programming
 practice as well as cover the technical elements.
@@ -87,7 +87,7 @@ This project has a low risk because researchers in the gradual typing community
 have been exploring designs of gradual type systems for many years. There have
 been many publications in this field and other related fields, among which we
 have compiled a list of resources that may be of particular importance for our
-project, listed in Section \ref{sec-supporting-documents}. For the language choice,
+project, listed in Section \ref{sec-supporting-resources}. For the language choice,
 Octave is an open source language compatible with MATLAB. This avoids copyright
 issues and ensures the audience of our project. In addition, there are many open
 source projects related to MATLAB/Octave parsing, which will help us with the
@@ -115,6 +115,37 @@ function types as experimental features \cite{racket2017refinement}. Other
 similar projects include Typed Lua \cite{maidl2014typed} and Gradualtalk
 \cite{allende2014gradual} which bring optional type systems to Lua and to
 Smalltalk, respectively. Our project would largely benifit from these projects.
+
+\section{Supporting Resources}
+\label{sec-supporting-resources}
+We have compiled a list of resources that may be of particular importance for
+our project, listed as follows.
+
+\begin{itemize}
+    \item \url{https://dl.acm.org/citation.cfm?id=2661112}: This will be one of
+        our main supporting documents. This paper serves as a tutorial on how to
+        type-check and interpret the gradually-typed lambda calculus. We will
+        use this as a guide when we implement our proposed gradual typing
+        system.
+    \item \url{http://homes.sice.indiana.edu/mvitouse/papers/snapl15.pdf}: This
+        paper provides a formal characterization of behaviors of gradual type
+        systems. It also surveys popular programming languages with gradual type
+        systems. There are also very useful examples in the paper which we can
+        reference.
+    \item \url{http://www.cs.umd.edu/projects/PL/druby/}: This project adds type
+        annotations, type inference and dynamic type checking to Ruby. We can
+        use this project as a reference when we design the proposed gradual type
+        system for Octave.
+    \item \url{https://github.com/samth/gradual-typing-bib}: This link contains
+        a list of publications in the field of gradual typing. In case the links
+        above do not provide enough information for our project, we will still
+        have a large pool of resources to look through.
+    \item \url{https://github.com/ewiger/decade/tree/master/lib/mparser} and
+        \url{https://github.com/ericharley/matlab-parser}: These two projects
+        are both MATLAB parsers that we can reference. Since the syntax of
+        Octave is very similar to MATLAB, we can get valuable insight from these
+        parsers.
+\end{itemize}
 
 \appendix
 
