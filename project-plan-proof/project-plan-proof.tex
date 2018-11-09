@@ -1,0 +1,82 @@
+%%%% Proceedings format for most of ACM conferences (with the exceptions listed below) and all ICPS volumes.
+%\documentclass[sigconf]{acmart}
+%%%% As of March 2017, [siggraph] is no longer used. Please use sigconf (above) for SIGGRAPH conferences.
+
+%%%% Proceedings format for SIGPLAN conferences 
+\documentclass[sigplan]{acmart}
+
+%%%% Proceedings format for SIGCHI conferences
+% \documentclass[sigchi, review]{acmart}
+
+%%%% To use the SIGCHI extended abstract template, please visit
+% https://www.overleaf.com/read/zzzfqvkmrfzn
+
+
+\usepackage{booktabs} % For formal tables
+
+
+% Copyright
+% \setcopyright{none}
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+\setcopyright{rightsretained}
+%\setcopyright{usgov}
+%\setcopyright{usgovmixed}
+%\setcopyright{cagov}
+%\setcopyright{cagovmixed}
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+
+
+\begin{document}
+\title{Plan/Proof-of-Concept: \\Gradual Typing for Octave Language}
+\titlenote{Permission to make digital or hard copies of part or all of this work
+for personal or classroom use is granted without fee provided that copies are
+not made or distributed for profit or commercial advantage and that copies bear
+this notice and the full citation on the first page. Copyrights for third-party
+components of this work must be honored. For all other uses, contact the
+owner/author(s).}
+\subtitle{University of British Columbia CPSC 311 Course Project}
+
+
+\author{Ada Li}
+\affiliation{%
+  \institution{University of British Columbia}
+}
+\email{adali@alumni.ubc.ca}
+
+\author{Yuchong Pan}
+\affiliation{%
+  \institution{University of British Columbia}
+}
+\email{yuchong.pan@alumni.ubc.ca}
+
+\author{Kathy Wang}
+\affiliation{%
+  \institution{University of British Columbia}
+}
+\email{kathy.wang@alumni.ubc.ca}
+
+\author{Paul Wang}
+\affiliation{%
+  \institution{University of British Columbia}
+}
+\email{paul.wang@alumni.ubc.ca}
+
+
+\begin{abstract}
+\end{abstract}
+
+
+\keywords{gradual typing, Octave}
+
+
+\maketitle
+
+\input{project-plan-proof-body}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{project-plan-proof-bibliography}
+
+\end{document}
