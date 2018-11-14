@@ -7,7 +7,7 @@
   (U Expr decl assn func))
 
 (define-type Expr
-  (U id int bool string app binop))
+  (U id int bool string app add subtract multiply divide))
 
 (struct id
   ([name : Symbol]))
@@ -25,9 +25,20 @@
   ([fun  : Expr]
    [args : (Listof Expr)]))
 
-(struct binop
-  ([op  : (-> Expr Expr Expr)]
-   [lhs : Expr]
+(struct add
+  ([lhs : Expr]
+   [rhs : Expr]))
+
+(struct subtract
+  ([lhs : Expr]
+   [rhs : Expr]))
+
+(struct multiply
+  ([lhs : Expr]
+   [rhs : Expr]))
+
+(struct divide
+  ([lhs : Expr]
    [rhs : Expr]))
 
 (struct decl
