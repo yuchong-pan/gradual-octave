@@ -7,7 +7,19 @@
   (U Expr decl assn func))
 
 (define-type Expr
-  (U Symbol Number Boolean String app binop))
+  (U id int bool string app binop))
+
+(struct id
+  ([name : Symbol]))
+
+(struct int
+  ([n : Integer]))
+
+(struct bool
+  ([b : Boolean]))
+
+(struct string
+  ([s : String]))
 
 (struct app
   ([fun  : Expr]
