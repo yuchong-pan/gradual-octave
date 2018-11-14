@@ -7,7 +7,7 @@
   (U Expr decl assn func))
 
 (define-type Expr
-  (U id int bool string app add subtract multiply divide))
+  (U id int bool string app int-binop int-compop bool-compop))
 
 (struct id
   ([name : Symbol]))
@@ -25,20 +25,19 @@
   ([fun  : Expr]
    [args : (Listof Expr)]))
 
-(struct add
-  ([lhs : Expr]
+(struct int-binop
+  ([op  : (-> Integer Integer Integer)]
+   [lhs : Expr]
    [rhs : Expr]))
 
-(struct subtract
-  ([lhs : Expr]
+(struct int-compop
+  ([op  : (-> Integer Integer Boolean)]
+   [lhs : Expr]
    [rhs : Expr]))
 
-(struct multiply
-  ([lhs : Expr]
-   [rhs : Expr]))
-
-(struct divide
-  ([lhs : Expr]
+(struct bool-compop
+  ([op  : (-> Boolean Boolean Boolean)]
+   [lhs : Expr]
    [rhs : Expr]))
 
 (struct decl
