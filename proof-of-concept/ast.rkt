@@ -7,7 +7,7 @@
   (U Expr decl assn func))
 
 (define-type Expr
-  (U id int bool string app int-binop int-compop bool-compop))
+  (U id int string app int-binop int-compop string-compop))
 
 (struct id
   ([name : Symbol]))
@@ -35,8 +35,8 @@
    [lhs : Expr]
    [rhs : Expr]))
 
-(struct bool-compop
-  ([op  : (-> Boolean Boolean Boolean)]
+(struct string-compop
+  ([op  : (-> String String Boolean)]
    [lhs : Expr]
    [rhs : Expr]))
 
