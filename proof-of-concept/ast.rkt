@@ -26,7 +26,7 @@
    [args : (Listof Expr)]))
 
 (struct binop
-  ([op  : Procedure]
+  ([op  : (-> Expr Expr Expr)]
    [lhs : Expr]
    [rhs : Expr]))
 
