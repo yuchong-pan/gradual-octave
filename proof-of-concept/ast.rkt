@@ -45,7 +45,7 @@
    [body : (Listof Stmt)]))
 
 (define-type Type
-  (U 'int 'boolean 'string 'dynamic 'none arrow star))
+  (U 'int 'bool 'string 'dynamic 'none arrow star))
 
 (struct arrow
   ([dom : Type]
