@@ -15,9 +15,6 @@
 (struct int
   ([n : Integer]))
 
-(struct bool
-  ([b : Boolean]))
-
 (struct string
   ([s : String]))
 
@@ -55,7 +52,7 @@
    [body : (Listof Stmt)]))
 
 (define-type Type
-  (U 'int 'bool 'string 'dynamic 'none arrow star))
+  (U 'int 'string 'dynamic 'none arrow star))
 
 (struct arrow
   ([dom : Type]
