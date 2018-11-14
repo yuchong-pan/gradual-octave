@@ -7,13 +7,16 @@
   (U Expr decl assn func))
 
 (define-type Expr
-  (U id int string app int-binop int-compop string-compop))
+  (U id int bool string app int-binop bool-binop int-compop string-compop))
 
 (struct id
   ([name : Symbol]))
 
 (struct int
   ([n : Integer]))
+
+(struct bool
+  [(b : Boolean)])
 
 (struct string
   ([s : String]))
@@ -24,6 +27,11 @@
 
 (struct int-binop
   ([op  : (-> Integer Integer Integer)]
+   [lhs : Expr]
+   [rhs : Expr]))
+
+(struct bool-binop
+  ([op  : (-> Boolean Boolean Boolean)]
    [lhs : Expr]
    [rhs : Expr]))
 
@@ -52,7 +60,7 @@
    [body : (Listof Stmt)]))
 
 (define-type Type
-  (U 'int 'string 'dynamic 'none arrow star))
+  (U 'int 'bool 'string 'dynamic 'none arrow star))
 
 (struct arrow
   ([dom : Type]
