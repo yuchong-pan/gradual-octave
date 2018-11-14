@@ -1,29 +1,62 @@
-#lang plai
+#lang typed/racket
 
-(define-type Pgrm
-  [pgrm (stmts (listof Stmt?))])
+(struct pgrm
+  ([stmts : (Listof Stmt)]))
 
 (define-type Stmt
-  [s-expr (e Expr?)]
-  [s-decl (name symbol?)
-          (type Type?)]
-  [s-assn (vars (listof symbol?))
-          (e Expr?)]
-  [s-func (fname symbol?)
-          (args (listof (cons/c symbol? Type?)))
-          (rets (listof (cons/c symbol? Type?)))
-          (body (listof Stmt?))])
+  (U Expr decl assn func))
 
 (define-type Expr
-  [e-id (name symbol?)]
-  [e-num (n number?)]
-  [e-app (f Expr?) (args (listof Expr?))]
-  [e-binop (op procedure?) (lhs Expr?) (rhs Expr?)])
+  (U id int string app int-binop int-compop string-compop))
+
+(struct id
+  ([name : Symbol]))
+
+(struct int
+  ([n : Integer]))
+
+(struct string
+  ([s : String]))
+
+(struct app
+  ([fun  : Expr]
+   [args : (Listof Expr)]))
+
+(struct int-binop
+  ([op  : (-> Integer Integer Integer)]
+   [lhs : Expr]
+   [rhs : Expr]))
+
+(struct int-compop
+  ([op  : (-> Integer Integer Boolean)]
+   [lhs : Expr]
+   [rhs : Expr]))
+
+(struct string-compop
+  ([op  : (-> String String Boolean)]
+   [lhs : Expr]
+   [rhs : Expr]))
+
+(struct decl
+  ([name : Symbol]
+   [type : Type]))
+
+(struct assn
+  ([vars : (Listof Symbol)]
+   [expr : Expr]))
+
+(struct func
+  ([name : Symbol]
+   [args : (Listof (Pair Symbol Type))]
+   [rets : (Listof (Pair Symbol Type))]
+   [body : (Listof Stmt)]))
 
 (define-type Type
-  [t-int]
-  [t-bool]
-  [t-str]
-  [t-dyn]
-  [t-none]
-  [t-func (dom Type?) (cod Type?)])
+  (U 'int 'string 'dynamic 'none arrow star))
+
+(struct arrow
+  ([dom : Type]
+   [cod : Type]))
+
+(struct star
+  ([list : (Listof Type)]))
