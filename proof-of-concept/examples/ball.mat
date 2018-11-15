@@ -1,0 +1,149 @@
+## Copyright (C) 2008 Indrek Mandre <indrek(at)mare.ee>
+## For more information please see http://www.mare.ee/indrek/octave/
+
+% 24-sector symmetry reflections for the cube polywell
+sectors = cat (3,
+  [ 1  0  0;  0  1  0;  0  0  1 ], [ 1  0  0;  0 -1  0;  0  0 -1 ],
+  [ 1  0  0;  0  0 -1;  0  1  0 ], [ 1  0  0;  0  0  1;  0 -1  0 ],
+  [-1  0  0;  0  1  0;  0  0 -1 ], [-1  0  0;  0 -1  0;  0  0  1 ],
+  [-1  0  0;  0  0  1;  0  1  0 ], [-1  0  0;  0  0 -1;  0 -1  0 ],
+  [ 0  1  0;  0  0  1;  1  0  0 ], [ 0 -1  0;  0  0 -1;  1  0  0 ],
+  [ 0  0 -1;  0  1  0;  1  0  0 ], [ 0  0  1;  0 -1  0;  1  0  0 ],
+  [ 0  1  0;  0  0 -1; -1  0  0 ], [ 0 -1  0;  0  0  1; -1  0  0 ],
+  [ 0  0  1;  0  1  0; -1  0  0 ], [ 0  0 -1;  0 -1  0; -1  0  0 ],
+  [ 0  0  1;  1  0  0;  0  1  0 ], [ 0  0 -1;  1  0  0;  0 -1  0 ],
+  [ 0  1  0;  1  0  0;  0  0 -1 ], [ 0 -1  0;  1  0  0;  0  0  1 ],
+  [ 0  0 -1; -1  0  0;  0  1  0 ], [ 0  0  1; -1  0  0;  0 -1  0 ],
+  [ 0  1  0; -1  0  0;  0  0  1 ], [ 0 -1  0; -1  0  0;  0  0 -1 ]);
+
+% set up polywel size and the image coil size
+global R S CURRENT iR iS iCURRENT
+R = 0.15; S = 0.08; CURRENT = 1;
+A = 0.15; % wiffleball radius
+inv_f = (A^2)/(R^2 + (R + S/sqrt(2))^2);
+iR = R*inv_f; iS = S*inv_f; iCURRENT = -CURRENT / sqrt(inv_f);
+
+% half-length of the polywell cube side
+L = sqrt(R^2 + (R + S/sqrt(2))^2);
+
+% calculate field magnitude on the sphere
+[X,Y,Z] = sphere(1000);
+X = X .* A; Y = Y .* A; Z = Z .* A;
+POS = cat(2, X(:), Y(:), Z(:));
+B = polywell_bfield(R, S, CURRENT, POS);
+B = B + polywell_bfield(iR, iS, iCURRENT, POS);
+C = reshape (sqrt(dot(B, B, 2)), size(X));
+
+% direction function within the field for our ode
+function [d] = dirf(t, x)
+  global R S CURRENT iR iS iCURRENT
+  pos = reshape(x, size(x, 1)/3, 3);
+  B = polywell_bfield (R, S, CURRENT, pos);
+  B = B + polywell_bfield (iR, iS, iCURRENT, pos);
+  B = B ./ repmat(sqrt(dot(B, B, 2)), 1, 3);
+  d = reshape(B, size(x));
+endfunction
+
+% starting points for lines for the ode
+% assumption: lines go radially at equal spacing
+sp = zeros(8, 3);
+for i=1:8
+  phi = (i - 1) * pi / 16;
+  sp(i,:) = [-A + 0.01, 1e-5 * cos(phi), 1e-5 * sin(phi)];
+endfor
+
+% calculate the field lines on the sphere
+options = odeset ('MaxStep', 0.001, 'InitialStep', 0.001,
+  'AbsTol', 1e-6, 'RelTol', 1e-6);
+[t, x] = ode45(@dirf, [0 0.22], sp(:)', options);
+POS = [0 0 0];
+n = size(x,2)/3;
+for i=1:n
+  pos = cat(2, x(:, i), x(:, i + n), x(:, i + 2 * n));
+  % erase the cusp lines
+  idx=find(dot(pos,pos,2) < (A-0.001)^2);
+  pos(idx,:) = 0;
+  % map the positions into 24 sectors
+  for j=1:size(sectors, 3)
+    POS = cat(1, POS, (sectors(:,:,j) * pos')');
+    POS = cat(1, POS, [0 0 0]);
+  endfor
+endfor
+
+hold on
+% draw the sphere with field magnitudes
+set(gca, 'XTick',[], 'YTick',[], 'ZTick',[]);
+axis([-A A -A A -A A]);
+axis square;
+view(-15, 30);
+surf(X,Y,Z,C);
+view(-15, 30);
+shading interp
+colormap(jet(24));
+
+% draw the field lines
+cn = camera3dn();
+cn = repmat(cn, size(POS)(1), 1);
+% erase points behind the view
+POS(find(dot(POS, cn, 2) < 0), :) = 0;
+idx=find(any(POS,2)==0);
+start = 0;
+for i=1:size(POS,1)
+  if any(POS(i,:))
+    if start == 0
+      start = i;
+    endif
+  else
+    if start != 0
+      data = POS(start:i-1, :);
+      x = data(:, 1);
+      y = data(:, 2);
+      z = data(:, 3);
+      plot3(x, y, z, 'color', [0 0 0]);
+      view(-15, 30);
+    endif
+    start = 0;
+  endif
+endfor
+
+hold off
+
+print ("ball.png", "-S1200,1200");
+
+clf
+hold on
+set(gca, 'XTick',[], 'YTick',[], 'ZTick',[]);
+view(-15, 30);
+axis([-A A -A A -A A]);
+axis square;
+
+% draw the field lines
+cn = camera3dn();
+cn = repmat(cn, size(POS)(1), 1);
+% erase points behind the view
+POS(find(dot(POS, cn, 2) < -0.005), :) = 0;
+idx=find(any(POS,2)==0);
+start = 0;
+for i=1:size(POS,1)
+  if any(POS(i,:))
+    if start == 0
+      start = i;
+    endif
+  else
+    if start != 0
+      data = POS(start:i-1, :);
+      x = data(:, 1);
+      y = data(:, 2);
+      z = data(:, 3);
+      plot3(x, y, z, 'color', [0 0 0]);
+      view(-15, 30);
+    endif
+    start = 0;
+  endif
+endfor
+
+hold off
+
+print ("ball2.png", "-S1200,1200");
+print ("ball3.eps", "-deps");
+
