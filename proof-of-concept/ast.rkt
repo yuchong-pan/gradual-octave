@@ -1,5 +1,7 @@
 #lang typed/racket
 
+(provide pgrm Stmt Expr id int bool string app int-binop bool-binop int-compop string-compop decl assn func Type arrow star)
+
 (struct pgrm
   ([stmts : (Listof Stmt)]))
 
