@@ -1,13 +1,19 @@
 #lang typed/racket
 
-(struct pgrm
-  ([stmts : (Listof Stmt)]))
+(provide Pgrm Stmt Expr Constant id int bool string app int-binop bool-binop
+         int-compop string-compop decl assn func Type arrow arrow? star star?
+         star-list)
+
+(define-type Pgrm (Listof Stmt))
 
 (define-type Stmt
   (U Expr decl assn func))
 
 (define-type Expr
-  (U id int bool string app int-binop bool-binop int-compop string-compop))
+  (U id Constant app int-binop bool-binop int-compop string-compop))
+
+(define-type Constant
+  (U int bool string))
 
 (struct id
   ([name : Symbol]))
