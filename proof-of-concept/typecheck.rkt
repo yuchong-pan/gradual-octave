@@ -109,7 +109,23 @@
     [(app fun args)
      (local [(define fun-type (typecheck-expr env fun))]
        (if (arrow? fun-type)
-           (typecheck-star env args)
+           (local [(define expect-types (arrow-dom fun-type))
+                   (define actual-types (typecheck-star env args))
+                   (define expect-length (length expect-types))
+                   (define actual-length (length actual-types))
+                   (define adjusted-actual
+                     (cond
+                       [(> actual-length expect-length)
+                        (take actual-types expect-length)]
+                       [(< actual-length expect-length)
+                        (append actual-types
+                                (build-list (- expect-length actual-length)
+                                            (lambda (x) 'dynamic)))]
+                       [else actual-types]))
+                   (define return-types (arrow-cod fun-type))]
+             (if (consistent-list? expect-types adjusted-actual)
+                 return-types
+                 (error 'typecheck-expr "Function application argument type mismatch")))
            (error 'typecheck-expr "Try to apply a non-function")))]))
 
 (: typecheck-star (-> Env (Listof Expr) (Listof Type)))

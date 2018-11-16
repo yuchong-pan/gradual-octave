@@ -1,7 +1,8 @@
 #lang typed/racket
 
 (provide Pgrm Stmt Expr Constant id int bool string app int-binop bool-binop
-         int-compop string-compop decl assn func Type arrow arrow?)
+         int-compop string-compop decl assn func Type arrow arrow? arrow-dom
+         arrow-cod)
 
 (define-type Pgrm (Listof Stmt))
 
