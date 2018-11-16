@@ -58,13 +58,13 @@
              (define expect-length (length expect-types))
              (define actual-types
                (local [(define original (typecheck-expr env expr))
-                       (define starred (if (list? original)
+                       (define listify (if (list? original)
                                            original
                                            (list original)))
                        ]
-                 (if (> (length starred) expect-length)
-                     (take starred expect-length)
-                     starred)))
+                 (if (> (length listify) expect-length)
+                     (take listify expect-length)
+                     listify)))
              (define actual-length (length actual-types))]
        (cond
          [(not (= expect-length actual-length))
@@ -110,7 +110,7 @@
      (local [(define fun-type (typecheck-expr env fun))]
        (if (arrow? fun-type)
            (local [(define expect-types (arrow-dom fun-type))
-                   (define actual-types (typecheck-star env args))
+                   (define actual-types (typecheck-list env args))
                    (define expect-length (length expect-types))
                    (define actual-length (length actual-types))
                    (define adjusted-actual
@@ -128,10 +128,8 @@
                  (error 'typecheck-expr "Function application argument type mismatch")))
            (error 'typecheck-expr "Try to apply a non-function")))]))
 
-(: typecheck-star (-> Env (Listof Expr) (Listof Type)))
-(define (typecheck-star env es)
-  (match es
-    ['() '()]
-    [(cons first rest)
-     (cons (typecheck-expr env first)
-           (typecheck-star env rest))]))
+(: typecheck-list (-> Env (Listof Expr) (Listof Type)))
+(define (typecheck-list env es)
+  ((inst map Type Expr)
+   (lambda (e) (typecheck-expr env e))
+   es))
