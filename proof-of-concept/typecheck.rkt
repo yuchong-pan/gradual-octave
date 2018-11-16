@@ -8,11 +8,13 @@
     [`(,T1 dynamic) #t]
     [`(dynamic ,T2) #t]
     [`(,(arrow T1-dom T1-cod) ,(arrow T2-dom T2-cod))
-     (and (consistent? T1-dom T2-dom)
-          (consistent? T1-cod T2-cod))]
-    [`(,(star T1-list) ,(star T2-list))
-     (andmap consistent? T1-list T2-list)]
+     (and (consistent-list? T1-dom T2-dom)
+          (consistent-list? T1-cod T2-cod))]
     [else (equal? T1 T2)]))
+
+(: consistent-list? (-> (Listof Type) (Listof Type) Boolean))
+(define (consistent-list? lot1 lot2)
+  (andmap consistent? lot1 lot2))
 
 (: typeof (-> Constant Type))
 (define (typeof c)
@@ -39,35 +41,35 @@
      (and (typecheck (append rets (append args env)) body)
           (local [(define inst-map (inst map Type (Pair Symbol Type)))]
             (cons (cons name
-                        (arrow (star (inst-map cdr args))
-                                     (star (inst-map cdr rets))))
+                        (arrow (inst-map cdr args)
+                               (inst-map cdr rets)))
                   env)))]
     [(decl name type)
      (cons (cons name type) env)]
     [(assn names expr)
      (local [(define expect-types
-               (star ((inst map Type Symbol)
-                      (lambda (name)
-                        (local [(define result (assoc name env))]
-                          (if (false? result)
-                              (error 'typecheck-stmt "Unbound identifier")
-                              (cdr result))))
-                      names)))
-             (define expect-length (length (star-list expect-types)))
+               ((inst map Type Symbol)
+                (lambda (name)
+                  (local [(define result (assoc name env))]
+                    (if (false? result)
+                        (error 'typecheck-stmt "Unbound identifier")
+                        (cdr result))))
+                names))
+             (define expect-length (length expect-types))
              (define actual-types
                (local [(define original (typecheck-expr env expr))
-                       (define starred (if (star? original)
+                       (define starred (if (list? original)
                                            original
-                                           (star (list original))))
+                                           (list original)))
                        ]
-                 (if (> (length (star-list starred)) expect-length)
-                     (star (take (star-list starred) expect-length))
+                 (if (> (length starred) expect-length)
+                     (take starred expect-length)
                      starred)))
-             (define actual-length (length (star-list actual-types)))]
+             (define actual-length (length actual-types))]
        (cond
          [(not (= expect-length actual-length))
           (error 'typecheck-stmt "Assignment arity mismatch")]
-         [(consistent? expect-types actual-types) env]
+         [(consistent-list? expect-types actual-types) env]
          [else (error 'typecheck-stmt "Assignment type mismatch")]))]
     [else
      (begin (typecheck-expr env (cast s Expr))
@@ -110,10 +112,10 @@
            (typecheck-star env args)
            (error 'typecheck-expr "Try to apply a non-function")))]))
 
-(: typecheck-star (-> Env (Listof Expr) star))
+(: typecheck-star (-> Env (Listof Expr) (Listof Type)))
 (define (typecheck-star env es)
   (match es
-    ['() (star '())]
+    ['() '()]
     [(cons first rest)
-     (star (cons (typecheck-expr env first)
-                 (star-list (typecheck-star env rest))))]))
+     (cons (typecheck-expr env first)
+           (typecheck-star env rest))]))
