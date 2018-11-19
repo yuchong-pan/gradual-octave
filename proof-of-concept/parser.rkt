@@ -2,6 +2,7 @@
 
 (require brag/support)
 (require "language.rkt")
+(require syntax/parse)
 
 (define (tokenize ip)
   (port-count-lines! ip)
@@ -83,3 +84,58 @@
 (define (test2) (open-input-string (file->string "examples/hello_world.m")))
 (define test2-tokens (token-list (tokenize (test2))))
 (define test2-parsed (show-syntax (tokenize (test2))))
+
+;; Interpretation ;;
+
+; from here our interp takes the syntax objects (symbol) outputted by our parser
+
+#| e.g.
+'(drawing
+
+  (rows (repeat 3) (chunk 9 "X") ";")
+
+  (rows (repeat 6) (chunk 3 " ") (chunk 3 "X") (chunk 3 " ") ";")
+
+  (rows (repeat 3) (chunk 9 "X") ";"))
+|#
+
+; use syntax-parse, in the syntax/parse library, where we provide it a set of patterns to parse
+; and actions to perform when those patterns match
+
+(define (interp octave-stx)
+  (syntax-parse octave-stx
+    [({~literal translation_unit} rows-stxs ...)
+
+     ; we use ~literal to let syntax-parse know that yes should show up literally in the syntax object
+     (for ([rows-stx (syntax->list #'(rows-stxs ...))])
+            (interpret-rows rows-stx))]))
+
+; interpret-rows
+(define (interpret-rows rows-stx)
+    (syntax-parse rows-stx
+      [({~literal statement_list}
+        ({~literal statement} repeat-number)
+        chunks ... ";")
+
+       ; we extract out the repeat-number out of the syntax object and use it as the range of the for
+       ; loop. The inner loop walks across each chunk-stx and calls interpret-chunk on it.
+       (for ([i (syntax-e #'repeat-number)])
+            (for ([chunk-stx (syntax->list #'(chunks ...))])
+                 (interpret-chunk chunk-stx))
+            (newline))]))
+
+; interpret-chunk
+(define (interpret-chunk chunk-stx)
+    (syntax-parse chunk-stx
+      ; extract out the chunk-size and chunk-string portions, and print to standard output
+      [({~literal chunk} chunk-size chunk-string)
+  
+       (for ([k (syntax-e #'chunk-size)])
+            (display (syntax-e #'chunk-string)))]))
+
+; interp tests
+(define test-interp-chunk (interpret-chunk #'(chunk 3 "X")))
+(define test-interp (interp #'(translation_unit (statement_list (statement 5) (chunk 3 "X") ";"))))
+; TODO: fix these tests
+(define test-interp2 (interp test1-parsed))
+(define test-interp3 (interp test2-parsed))
