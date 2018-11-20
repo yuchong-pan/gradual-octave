@@ -2,11 +2,15 @@
 
 translation_unit
         : statement_list
-        | FUNCTION function_declare eostmt statement_list
+        ;
+
+function_declare_full
+        : FUNCTION function_declare eostmt statement_list eostmt ENDFUNCTION
         ;
 
 primary_expression
         : IDENTIFIER                  
+        | BOOLEAN
         | CONSTANT    
         | STRING_LITERAL        
         | '(' expression ')'

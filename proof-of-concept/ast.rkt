@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(provide Pgrm Stmt Expr Constant id int bool string app int-binop bool-binop
+(provide Pgrm Stmt Expr Constant iden int bool string app int-binop bool-binop
          int-compop string-compop decl assn func Type arrow arrow? arrow-dom
          arrow-cod)
 
@@ -10,12 +10,12 @@
   (U Expr decl assn func))
 
 (define-type Expr
-  (U id Constant app int-binop bool-binop int-compop string-compop))
+  (U iden Constant app int-binop bool-binop int-compop string-compop))
 
 (define-type Constant
   (U int bool string))
 
-(struct id
+(struct iden
   ([name : Symbol]))
 
 (struct int

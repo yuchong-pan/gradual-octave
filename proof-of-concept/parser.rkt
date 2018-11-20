@@ -2,6 +2,7 @@
 
 (require brag/support)
 (require "language.rkt")
+(require "ast.rkt")
 (require syntax/parse)
 
 (define (tokenize ip)
@@ -10,6 +11,8 @@
     (lexer-src-pos
      ["function"
       (token 'FUNCTION lexeme)]
+     ["endfunction"
+      (token 'ENDFUNCTION lexeme)]
      [".*"
       (token 'ARRAYMUL lexeme)]
      ["./"
@@ -50,8 +53,12 @@
       (token 'LE_OP lexeme)]
      [".'"
       (token 'NCTRANSPOSE lexeme)]
+     ["false"
+      (token 'BOOLEAN lexeme)]
+     ["true"
+      (token 'BOOLEAN lexeme)]
      [(char-set "=()[]:,+-~*/\\^<>&|;")
-      (token lexeme)]
+      (token lexeme lexeme)]
      ["'"
       (token 'TRANSPOSE lexeme)]
      [numeric
@@ -60,7 +67,9 @@
       (token 'STRING_LITERAL lexeme)]
      [whitespace
       (token 'WHITESPACE lexeme #:skip? #t)]
-     [(repetition 0 +inf.0 (intersection (complement whitespace) (complement numeric) any-char))
+     [(:: "##" (repetition 0 +inf.0 (intersection (complement "\n") any-char)))
+      (token 'COMMENT lexeme #:skip? #t)]
+     [(repetition 0 +inf.0 (intersection (complement whitespace) (complement numeric) (complement (char-set "(),")) any-char))
       (token 'IDENTIFIER lexeme)]
      [(eof)
       (void)]))
@@ -79,11 +88,23 @@
 
 (define (test1) (open-input-string "a = 3;"))
 (define test1-tokens (token-list (tokenize (test1))))
-(define test1-parsed (show-syntax (tokenize (test1))))
+(define test1-parsed (parse (tokenize (test1))))
 
 (define (test2) (open-input-string (file->string "examples/hello_world.m")))
 (define test2-tokens (token-list (tokenize (test2))))
-(define test2-parsed (show-syntax (tokenize (test2))))
+(define test2-parsed (parse (tokenize (test2))))
+
+;(define (test3) (open-input-string (file->string "examples/circle3d.m")))
+;(define test3-tokens (token-list (tokenize (test3))))
+;(define test3-parsed (parse (tokenize (test3))))
+
+;(define (test4) (open-input-string "function x = test(y, z)
+;y = 1;
+;z = 2;
+;endfunction
+;"))
+;(define test4-tokens (token-list (tokenize (test4))))
+;(define test4-parsed (parse (tokenize (test4))))
 
 ;; Interpretation ;;
 
@@ -102,40 +123,11 @@
 ; use syntax-parse, in the syntax/parse library, where we provide it a set of patterns to parse
 ; and actions to perform when those patterns match
 
-(define (interp octave-stx)
-  (syntax-parse octave-stx
-    [({~literal translation_unit} rows-stxs ...)
+(define (build-ast root-stx)
+  (local[(define concrete-stx-tree (eval (transform-stx root-stx)))]
+    concrete-stx-tree)) ; TODO
 
-     ; we use ~literal to let syntax-parse know that yes should show up literally in the syntax object
-     (for ([rows-stx (syntax->list #'(rows-stxs ...))])
-            (interpret-rows rows-stx))]))
-
-; interpret-rows
-(define (interpret-rows rows-stx)
-    (syntax-parse rows-stx
-      [({~literal statement_list}
-        ({~literal statement} repeat-number)
-        chunks ...)
-
-       ; we extract out the repeat-number out of the syntax object and use it as the range of the for
-       ; loop. The inner loop walks across each chunk-stx and calls interpret-chunk on it.
-       (for ([i (syntax-e #'repeat-number)])
-            (for ([chunk-stx (syntax->list #'(chunks ...))])
-                 (interpret-chunk chunk-stx))
-            (newline))]))
-
-; interpret-chunk
-(define (interpret-chunk chunk-stx)
-    (syntax-parse chunk-stx
-      ; extract out the chunk-size and chunk-string portions, and print to standard output
-      [({~literal chunk} chunk-size chunk-string)
-  
-       (for ([k (syntax-e #'chunk-size)])
-            (display (syntax-e #'chunk-string)))]))
-
-; interp tests
-(define test-interp-chunk (interpret-chunk #'(chunk 3 "X")))
-(define test-interp (interp #'(translation_unit (statement_list (statement 5) (chunk 3 "X")))))
-(define test-interp2 (interp test1-parsed))
-; TODO: fix this test
-;(define test-interp3 (interp test2-parsed))
+(define (transform-stx root-stx)
+ (syntax-parse root-stx
+    [({~literal translation_unit} statement-list-stx ...)
+     #`(list statement-list-stx ...)])) ; TODO
