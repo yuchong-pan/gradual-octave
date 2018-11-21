@@ -27,7 +27,7 @@
       (token 'CLEAR lexeme)]
      ["if"
       (token 'IF lexeme)]
-     ["end"
+     ["endif"
       (token 'END lexeme)]
      ["else"
       (token 'ELSE lexeme)]
@@ -69,7 +69,7 @@
       (token 'WHITESPACE lexeme #:skip? #t)]
      [(:: "##" (repetition 0 +inf.0 (intersection (complement "\n") any-char)))
       (token 'COMMENT lexeme #:skip? #t)]
-     [(repetition 0 +inf.0 (intersection (complement whitespace) (complement numeric) (complement (char-set "(),")) any-char))
+     [(repetition 0 +inf.0 (intersection (complement whitespace) (complement (char-set"=()[]:,+-~*/\\^<>&|;")) any-char))
       (token 'IDENTIFIER lexeme)]
      [(eof)
       (void)]))
@@ -94,9 +94,9 @@
 (define test2-tokens (token-list (tokenize (test2))))
 (define test2-parsed (parse (tokenize (test2))))
 
-;(define (test3) (open-input-string (file->string "examples/circle3d.m")))
-;(define test3-tokens (token-list (tokenize (test3))))
-;(define test3-parsed (parse (tokenize (test3))))
+(define (test3) (open-input-string (file->string "examples/circle3d.m")))
+(define test3-tokens (token-list (tokenize (test3))))
+(define test3-parsed (parse (tokenize (test3))))
 
 ;(define (test4) (open-input-string "function x = test(y, z)
 ;y = 1;

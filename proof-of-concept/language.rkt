@@ -1,11 +1,13 @@
 #lang brag
 
-translation_unit
-        : statement_list
+octave
+        : translation_unit
+        | octave translation_unit
         ;
 
-function_declare_full
-        : FUNCTION function_declare eostmt statement_list eostmt ENDFUNCTION
+translation_unit
+        : statement_list
+        | FUNCTION function_declare eostmt statement_list eostmt ENDFUNCTION eostmt
         ;
 
 primary_expression
@@ -154,11 +156,11 @@ array_list
         ;
 
 selection_statement
-        : IF expression statement_list END eostmt
-        | IF expression statement_list ELSE statement_list END eostmt
-        | IF expression statement_list elseif_clause END eostmt
-        | IF expression statement_list elseif_clause
-          ELSE statement_list END eostmt
+        : IF expression CR statement_list END CR
+        | IF expression CR statement_list ELSE statement_list END CR
+        | IF expression CR statement_list elseif_clause END CR
+        | IF expression CR statement_list elseif_clause
+          ELSE statement_list END CR
         ;
 
 elseif_clause
