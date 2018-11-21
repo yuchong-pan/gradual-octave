@@ -48,13 +48,9 @@ array_expression
 
 unary_expression
         : postfix_expression
-        | unary_operator postfix_expression
-        ;
-
-unary_operator
-        : '+'
-        | '-'
-        | '~'
+        | '+' postfix_expression
+        | '-' postfix_expression
+        | '~' postfix_expression
         ;
 
 multiplicative_expression

@@ -58,7 +58,7 @@
       (token 'BOOLEAN lexeme)]
      ["true"
       (token 'BOOLEAN lexeme)]
-     [(:: ":" (repetition 0 +inf.0 whitespace) (repetition 0 +inf.0 (intersection (complement whitespace) (complement (char-set"=()[]:,+-~*/\\^<>&|;")) any-char)))
+     [(:: ":" (repetition 0 +inf.0 whitespace) (repetition 1 +inf.0 (intersection (complement whitespace) (complement (char-set"=()[]:,+-~*/\\^<>&|;")) any-char)))
       (token 'TYPE lexeme)]
      [(char-set "=()[]:,+-~*/\\^<>&|;")
       (token lexeme lexeme)]

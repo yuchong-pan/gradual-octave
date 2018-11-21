@@ -16,58 +16,72 @@
   (U int bool string))
 
 (struct iden
-  ([name : Symbol]))
+  ([name : Symbol]
+   [type : Type])
+  #:transparent)
 
 (struct int
-  ([n : Integer]))
+  ([n : Integer])
+  #:transparent)
 
 (struct bool
-  [(b : Boolean)])
+  [(b : Boolean)]
+  #:transparent)
 
 (struct string
-  ([s : String]))
+  ([s : String])
+  #:transparent)
 
 (struct app
   ([fun  : Expr]
-   [args : (Listof Expr)]))
+   [args : (Listof Expr)])
+  #:transparent)
 
 (struct int-binop
   ([op  : (-> Integer Integer Integer)]
    [lhs : Expr]
-   [rhs : Expr]))
+   [rhs : Expr])
+  #:transparent)
 
 (struct bool-binop
   ([op  : (-> Boolean Boolean Boolean)]
    [lhs : Expr]
-   [rhs : Expr]))
+   [rhs : Expr])
+  #:transparent)
 
 (struct int-compop
   ([op  : (-> Integer Integer Boolean)]
    [lhs : Expr]
-   [rhs : Expr]))
+   [rhs : Expr])
+  #:transparent)
 
 (struct string-compop
   ([op  : (-> String String Boolean)]
    [lhs : Expr]
-   [rhs : Expr]))
+   [rhs : Expr])
+  #:transparent)
 
 (struct decl
   ([name : Symbol]
-   [type : Type]))
+   [type : Type])
+  #:transparent)
 
 (struct assn
-  ([vars : (Listof Symbol)]
-   [expr : Expr]))
+  ([vars : (Listof iden)]
+   [expr : Expr])
+  #:transparent)
 
 (struct func
   ([name : Symbol]
    [args : (Listof (Pair Symbol Type))]
    [rets : (Listof (Pair Symbol Type))]
-   [body : (Listof Stmt)]))
+   [body : (Listof Stmt)])
+  #:transparent)
 
 (define-type Type
   (U 'int 'bool 'string 'dynamic 'none arrow (Listof Type)))
 
 (struct arrow
   ([dom : (Listof Type)]
-   [cod : (Listof Type)]))
+   [cod : (Listof Type)])
+  #:transparent)
