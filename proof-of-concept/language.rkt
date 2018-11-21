@@ -10,8 +10,13 @@ translation_unit
         | FUNCTION function_declare eostmt statement_list eostmt ENDFUNCTION eostmt
         ;
 
+typed_identifier
+        : IDENTIFIER
+        | IDENTIFIER ':' TYPE
+        ;
+
 primary_expression
-        : IDENTIFIER                  
+        : typed_identifier                  
         | BOOLEAN
         | CONSTANT    
         | STRING_LITERAL        
@@ -38,7 +43,7 @@ index_expression_list
         ;
 
 array_expression
-        : IDENTIFIER '(' index_expression_list ')'
+        : typed_identifier '(' index_expression_list ')'
         ;
 
 unary_expression
@@ -124,8 +129,8 @@ statement_list
         ;
 
 identifier_list
-        : IDENTIFIER
-        | identifier_list IDENTIFIER
+        : typed_identifier
+        | identifier_list typed_identifier
         ;
 
 global_statement
@@ -170,8 +175,8 @@ elseif_clause
 
 iteration_statement
         : WHILE expression statement_list END eostmt
-        | FOR IDENTIFIER '=' expression statement_list END eostmt
-        | FOR '(' IDENTIFIER '=' expression ')' statement_list END eostmt 
+        | FOR typed_identifier '=' expression statement_list END eostmt
+        | FOR '(' typed_identifier '=' expression ')' statement_list END eostmt 
         ;
 
 jump_statement
@@ -180,19 +185,19 @@ jump_statement
         ;
 
 func_ident_list
-        : IDENTIFIER
-        | func_ident_list ',' IDENTIFIER
+        : typed_identifier
+        | func_ident_list ',' typed_identifier
         ;
 
 func_return_list
-        : IDENTIFIER
+        : typed_identifier
         | '[' func_ident_list ']'
         ;
 
 function_declare_lhs
-        : IDENTIFIER
-        | IDENTIFIER '(' ')'
-        | IDENTIFIER '(' func_ident_list ')'
+        : typed_identifier
+        | typed_identifier '(' ')'
+        | typed_identifier '(' func_ident_list ')'
         ;
 
 function_declare
