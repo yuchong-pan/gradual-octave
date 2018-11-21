@@ -1,6 +1,7 @@
 #lang plai
 
 (require "ast.rkt")
+(require "parser.rkt")
 (require racket/pretty)
 
 (define (stx-atom? sexp)
@@ -106,7 +107,7 @@
        (local [(define ids (helper pe-stx))
                (define id-list (or (and (list? ids) ids)
                                    (list ids)))] ; can get single assignments too
-       (assn id-list (helper e-stx)))]
+         (assn id-list (helper e-stx)))]
 
       ; postfix_expression
       [(list (? (stx-atom? 'postfix_expression))
@@ -383,3 +384,18 @@
        (helper fil-stx)]
       [_ (error 'build-ast "Unable to recognize expr: ~a" (~a (pretty-format (syntax->datum stx)) #:max-width 1000))]))]
     (helper stx)))
+
+(define (test1) (open-input-string "a = 3;"))
+(define test1-tokens (token-list (tokenize (test1))))
+(define test1-parsed (parse (tokenize (test1))))
+(define test1-ast (build-ast test1-parsed))
+
+(define (test2) (open-input-string (file->string "examples/hello_world.m")))
+(define test2-tokens (token-list (tokenize (test2))))
+(define test2-parsed (parse (tokenize (test2))))
+(define test2-ast (build-ast test2-parsed))
+
+(define (test3) (open-input-string (file->string "examples/circle3d-test.m")))
+(define test3-tokens (token-list (tokenize (test3))))
+(define test3-parsed (parse (tokenize (test3))))
+(define test3-ast (build-ast test3-parsed))
