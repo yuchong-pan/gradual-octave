@@ -30,7 +30,7 @@
   (or (and (string->number (syntax->datum stx)) (int (string->number (syntax->datum stx))))
       (and (string=? (syntax->datum stx) "true") (bool #t))
       (and (string=? (syntax->datum stx) "false") (bool #f))
-      (string (syntax->datum stx))))
+      (string (syntax->datum stx)))) ; TODO: handle TRANSPOSE and NCTRANSPOSE
 
 (define (build-ast stx)
   (local [(define (helper stx)
@@ -138,7 +138,7 @@
       ; index_expression
       [(list (? (stx-atom? 'index_expression))
              (? (stx-atom? ":")))
-       (bool #f)] ; TODO
+       ":"] ; DONE: just print it?
       [(list (? (stx-atom? 'index_expression))
              (? (stx-many? 'expression) e-stx))
        (helper e-stx)]
@@ -148,7 +148,7 @@
              (? (stx-many? 'typed_identifier) ti-stx))
        (helper ti-stx)]
       [(list (? (stx-atom? 'primary_expression))
-             (? syntax? literal))
+             (? syntax? literal)) ; string literal
        (parse-literal literal)]
       [(list (? (stx-atom? 'primary_expression))
              (? (stx-atom? "("))
@@ -282,36 +282,30 @@
              (? (stx-atom? "/"))
              (? (stx-many? 'unary_expression) ue-stx))
        (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))]
-      [(list (? (stx-atom? 'multiplicative_expression))
-             (? (stx-many? 'multiplicative_expression) me-stx)
-             (? (stx-atom? "\\"))
-             (? (stx-many? 'unary_expression) ue-stx))
-       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: this doesn't work yet
+      ; removed "//" becuase according to matlab its not an Arithmetic Operator,
+      ; its for String and Character Formatting, see https://www.mathworks.com/help/matlab/matlab_prog/matlab-operators-and-special-characters.html
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? "^"))
              (? (stx-many? 'unary_expression) ue-stx))
        (int-binop (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))]
+      ;; ====== BELOW ARE array multiplication: do we handle this?? ====== ;;
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".*"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (int-binop (lambda (x y) (* x y)) (helper me-stx) (helper ue-stx))] ; TODO
+       (int-binop (lambda (x y) (* x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise multiplication
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? "./"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO
-      [(list (? (stx-atom? 'multiplicative_expression))
-             (? (stx-many? 'multiplicative_expression) me-stx)
-             (? (stx-atom? ".\\"))
-             (? (stx-many? 'unary_expression) ue-stx))
-       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO
+       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise right division
+      ; REMOVED, again .\\ doesn't exist see above link
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".^"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (int-binop (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))] ; TODO
+       (int-binop (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise power
 
       ; unary_expression
       [(list (? (stx-atom? 'unary_expression))
@@ -320,15 +314,16 @@
       [(list (? (stx-atom? 'unary_expression))
              (? (stx-atom? "+"))
              (? (stx-many? 'postfix_expression) pe-stx))
-       (helper pe-stx)] ; no clue how to handle
+       (helper pe-stx)] ; DONE: just return this value?
       [(list (? (stx-atom? 'unary_expression))
              (? (stx-atom? "-"))
              (? (stx-many? 'postfix_expression) pe-stx))
-       (helper pe-stx)] ; no clue how to handle
+       (- (helper pe-stx))] ; DONE: Normally subtracts the second (and following) number(s) from the first ; negates the number if there is only one argument.
+
       [(list (? (stx-atom? 'unary_expression))
              (? (stx-atom? "~"))
              (? (stx-many? 'postfix_expression) pe-stx))
-       (helper pe-stx)] ; no clue how to handle (this one is presumably a negation)
+       (- (helper pe-stx))] ; DONE: same as "-"
         
       ; function_declare
       [(list (? (stx-atom? 'function_declare))
