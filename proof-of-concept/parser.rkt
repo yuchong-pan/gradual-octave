@@ -3,6 +3,7 @@
 (require brag/support)
 (require "language.rkt")
 (require "ast.rkt")
+(require "ast-builder.rkt")
 (require syntax/parse)
 
 (define (tokenize ip)
@@ -89,14 +90,17 @@
 (define (test1) (open-input-string "a = 3;"))
 (define test1-tokens (token-list (tokenize (test1))))
 (define test1-parsed (parse (tokenize (test1))))
+(define test1-ast (build-ast test1-parsed))
 
 (define (test2) (open-input-string (file->string "examples/hello_world.m")))
 (define test2-tokens (token-list (tokenize (test2))))
 (define test2-parsed (parse (tokenize (test2))))
+(define test2-ast (build-ast test2-parsed))
 
 (define (test3) (open-input-string (file->string "examples/circle3d.m")))
 (define test3-tokens (token-list (tokenize (test3))))
 (define test3-parsed (parse (tokenize (test3))))
+(define test3-ast (build-ast test3-parsed))
 
 ;(define (test4) (open-input-string "function x = test(y, z)
 ;y = 1;
@@ -122,12 +126,3 @@
 
 ; use syntax-parse, in the syntax/parse library, where we provide it a set of patterns to parse
 ; and actions to perform when those patterns match
-
-(define (build-ast root-stx)
-  (local[(define concrete-stx-tree (eval (transform-stx root-stx)))]
-    concrete-stx-tree)) ; TODO
-
-(define (transform-stx root-stx)
- (syntax-parse root-stx
-    [({~literal translation_unit} statement-list-stx ...)
-     #`(list statement-list-stx ...)])) ; TODO
