@@ -37,13 +37,6 @@
 (: typecheck-stmt (-> Env Stmt Env))
 (define (typecheck-stmt env s)
   (match s
-    [(func name args rets body)
-     (and (typecheck (append rets (append args env)) body)
-          (local [(define inst-map (inst map Type (Pair Symbol Type)))]
-            (cons (cons name
-                        (arrow (inst-map cdr args)
-                               (inst-map cdr rets)))
-                  env)))]
     [(decl name type)
      (cons (cons name type) env)]
     [(assn names expr)
@@ -71,6 +64,20 @@
           (error 'typecheck-stmt "Assignment arity mismatch")]
          [(consistent-list? expect-types actual-types) env]
          [else (error 'typecheck-stmt "Assignment type mismatch")]))]
+    [(func name args rets body)
+     (and (typecheck (append rets (append args env)) body)
+          (local [(define inst-map (inst map Type (Pair Symbol Type)))]
+            (cons (cons name
+                        (arrow (inst-map cdr args)
+                               (inst-map cdr rets)))
+                  env)))]
+    [(if-stmt cond then else)
+     (local [(define cond-type (typecheck-expr env cond))]
+       (if (equal? cond-type 'bool)
+           (begin (typecheck env then)
+                  (typecheck env else)
+                  env)
+           (error 'typecheck-stmt "If condition not a Boolean")))]
     [else
      (begin (typecheck-expr env (cast s Expr))
             env)]))
