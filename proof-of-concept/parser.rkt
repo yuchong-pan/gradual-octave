@@ -99,7 +99,7 @@
 (define test2-parsed (parse (tokenize (test2))))
 (define test2-ast (build-ast test2-parsed))
 
-(define (test3) (open-input-string (file->string "examples/circle3d.m")))
+(define (test3) (open-input-string (file->string "examples/circle3d-test.m")))
 (define test3-tokens (token-list (tokenize (test3))))
 (define test3-parsed (parse (tokenize (test3))))
 (define test3-ast (build-ast test3-parsed))

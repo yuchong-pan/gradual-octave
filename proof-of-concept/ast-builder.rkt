@@ -52,7 +52,7 @@
 
       ; translation_unit
       [(list (? (stx-atom? 'translation_unit))
-             (? (stx-many? 'statement_list) sl-stx)) ; stub
+             (? (stx-many? 'statement_list) sl-stx))
        (helper sl-stx)]
       [(list (? (stx-atom? 'translation_unit))
              (? (stx-atom? "function"))
@@ -73,7 +73,7 @@
       [(list (? (stx-atom? 'statement_list))
              (? (stx-many? 'statement_list) sl-stx)
              (? (stx-many? 'statement) s-stx))
-       (append (list (helper s-stx)) (list (helper s-stx)))]
+       (append (helper sl-stx) (list (helper s-stx)))]
 
       ; statement
       [(list (? (stx-atom? 'statement))
@@ -86,7 +86,7 @@
       ; expression_statement
       [(list (? (stx-atom? 'expression_statement))
              (? (stx-many? 'eostmt)))
-       empty] ; verify that this is working as intended
+       (bool #f)] ; TODO: verify that this is working as intended
       [(list (? (stx-atom? 'expression_statement))
              (? (stx-many? 'expression) e-stx)
              (? (stx-many? 'eostmt)))
@@ -103,7 +103,10 @@
              (? (stx-many? 'postfix_expression) pe-stx)
              (? (stx-atom? "="))
              (? (stx-many? 'expression) e-stx))
-       (assn (list (helper pe-stx)) (helper e-stx))]
+       (local [(define ids (helper pe-stx))
+               (define id-list (or (and (list? ids) ids)
+                                   (list ids)))] ; can get single assignments too
+       (assn id-list (helper e-stx)))]
 
       ; postfix_expression
       [(list (? (stx-atom? 'postfix_expression))
@@ -160,6 +163,23 @@
              (? (stx-many? 'array_list) al-stx)
              (? (stx-atom? "]")))
        (helper al-stx)]
+
+      ; array_list
+      [(list (? (stx-atom? 'array_list))
+             (? (stx-many? 'array_element) ae-stx))
+       (list (helper ae-stx))]
+      [(list (? (stx-atom? 'array_list))
+             (? (stx-many? 'array_list) al-stx)
+             (? (stx-many? 'array_element) ae-stx))
+       (append (helper al-stx) (list (helper ae-stx)))]
+
+      ; array_element
+      [(list (? (stx-atom? 'array_element))
+             (? (stx-many? 'expression) e-stx))
+       (helper e-stx)]
+      [(list (? (stx-atom? 'array_element))
+             (? (stx-many? 'expression_statement) es-stx))
+       (helper es-stx)]
 
       ; expression
       [(list (? (stx-atom? 'expression))
@@ -312,7 +332,7 @@
       ; function_declare
       [(list (? (stx-atom? 'function_declare))
              (? (stx-many? 'function_declare_lhs) fdl-stx))
-       (append (helper fdl-stx) (list empty))] ; We return a 3-tuple of (type, args, rets)
+       (append (helper fdl-stx) empty)] ; We return a 3-tuple of (type, args, rets)
       [(list (? (stx-atom? 'function_declare))               ; and in this case we aren't given rets
              (? (stx-many? 'func_return_list) frl-stx)
              (? (stx-atom? "="))

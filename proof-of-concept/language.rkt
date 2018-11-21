@@ -12,7 +12,7 @@ translation_unit
 
 typed_identifier
         : IDENTIFIER
-        | IDENTIFIER ':' TYPE
+        | IDENTIFIER ':' IDENTIFIER ; this second IDENTIFIER is the type, we reuse the pattern for simplicity
         ;
 
 primary_expression
