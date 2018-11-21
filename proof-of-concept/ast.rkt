@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(provide Pgrm Stmt Expr Constant iden int bool string app int-binop bool-binop
+(provide Pgrm Stmt Expr Constant iden iden-name int bool string app int-binop bool-binop
          int-compop string-compop decl assn func Type arrow arrow? arrow-dom
          arrow-cod)
 
@@ -73,8 +73,8 @@
 
 (struct func
   ([name : Symbol]
-   [args : (Listof (Pair Symbol Type))]
-   [rets : (Listof (Pair Symbol Type))]
+   [args : (Listof iden)]
+   [rets : (Listof iden)]
    [body : (Listof Stmt)])
   #:transparent)
 

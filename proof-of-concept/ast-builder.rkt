@@ -73,12 +73,24 @@
       [(list (? (stx-atom? 'statement_list))
              (? (stx-many? 'statement_list) sl-stx)
              (? (stx-many? 'statement) s-stx))
-       (append (list (helper s-stx)) (list s-stx))]
+       (append (list (helper s-stx)) (list (helper s-stx)))]
 
       ; statement
       [(list (? (stx-atom? 'statement))
              (? (stx-many? 'assignment_statement) as-stx))
        (helper as-stx)]
+      [(list (? (stx-atom? 'statement))
+             (? (stx-many? 'expression_statement) es-stx))
+       (helper es-stx)]
+
+      ; expression_statement
+      [(list (? (stx-atom? 'expression_statement))
+             (? (stx-many? 'eostmt)))
+       empty] ; verify that this is working as intended
+      [(list (? (stx-atom? 'expression_statement))
+             (? (stx-many? 'expression) e-stx)
+             (? (stx-many? 'eostmt)))
+       (helper e-stx)]
 
       ; assignment_statement
       [(list (? (stx-atom? 'assignment_statement))
@@ -97,6 +109,35 @@
       [(list (? (stx-atom? 'postfix_expression))
              (? (stx-many? 'primary_expression) pe-stx))
        (helper pe-stx)]
+      [(list (? (stx-atom? 'postfix_expression))
+             (? (stx-many? 'array_expression) ae-stx))
+       (helper ae-stx)]
+
+      ; array_expression
+      [(list (? (stx-atom? 'array_expression))
+             (? (stx-many? 'typed_identifier) ti-stx)
+             (? (stx-atom? "("))
+             (? (stx-many? 'index_expression_list) iel-stx)
+             (? (stx-atom? ")")))
+       (app (helper ti-stx) (helper iel-stx))]
+
+      ; index_expression_list
+      [(list (? (stx-atom? 'index_expression_list))
+             (? (stx-many? 'index_expression) ie-stx))
+       (list (helper ie-stx))]
+      [(list (? (stx-atom? 'index_expression_list))
+             (? (stx-many? 'index_expression_list) iel-stx)
+             (? (stx-atom? ","))
+             (? (stx-many? 'index_expression) ie-stx))
+       (append (helper iel-stx) (list (helper ie-stx)))]
+
+      ; index_expression
+      [(list (? (stx-atom? 'index_expression))
+             (? (stx-atom? ":")))
+       (bool #f)] ; TODO
+      [(list (? (stx-atom? 'index_expression))
+             (? (stx-many? 'expression) e-stx))
+       (helper e-stx)]
 
       ; primary_expression
       [(list (? (stx-atom? 'primary_expression))
@@ -292,7 +333,7 @@
              (? (stx-atom? "("))
              (? (stx-many? 'func_ident_list) fil-stx)
              (? (stx-atom? ")")))
-       (list (car (helper ti-stx)) (helper fil-stx))]
+       (list (iden-name (helper ti-stx)) (helper fil-stx))]
 
       ; function_return_list
       [(list (? (stx-atom? 'function_return_list))
