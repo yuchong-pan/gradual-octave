@@ -32,6 +32,10 @@
       (and (string=? (syntax->datum stx) "false") (bool #f))
       (string (syntax->datum stx))))
 
+; we can use this to skip empty or not-implemented expressions
+(define (valid? e)
+  (not (false? e)))
+
 (define (build-ast stx)
   (local [(define (helper stx)
       (match (syntax->list stx)
@@ -46,10 +50,13 @@
        (iden (stx->id id-stx) (stx->t t-stx))]
 
       ; octave
-      [(list (? (stx-atom? 'octave)) tu-stx) (helper tu-stx)]
       [(list (? (stx-atom? 'octave))
-             (? (stx-many? 'octave) n-o-stx) tu-stx)
-       (list (helper n-o-stx) (helper tu-stx))]
+             (? (stx-many? 'translation_unit) tu-stx))
+             (helper tu-stx)]
+      [(list (? (stx-atom? 'octave))
+             (? (stx-many? 'octave) o-stx)
+             (? (stx-many? 'translation_unit) tu-stx))
+       (append (helper o-stx) (list (helper tu-stx)))]
 
       ; translation_unit
       [(list (? (stx-atom? 'translation_unit))
@@ -70,11 +77,11 @@
       ; statement_list
       [(list (? (stx-atom? 'statement_list))
              (? (stx-many? 'statement) s-stx))
-       (list (helper s-stx))]
+       (filter valid? (list (helper s-stx)))]
       [(list (? (stx-atom? 'statement_list))
              (? (stx-many? 'statement_list) sl-stx)
              (? (stx-many? 'statement) s-stx))
-       (append (helper sl-stx) (list (helper s-stx)))]
+       (append (helper sl-stx) (filter valid? (list (helper s-stx))))]
 
       ; statement
       [(list (? (stx-atom? 'statement))
@@ -84,6 +91,7 @@
              (? (stx-many? 'expression_statement) es-stx))
        (helper es-stx)]
 
+      #|
       ; eostmt
       [(list (? (stx-atom? 'eostmt))
              (? (stx-atom? ",")))
@@ -94,11 +102,12 @@
       [(list (? (stx-atom? 'eostmt))
              (? (stx-atom? 'CR)))
        ...] ;TODO
+      |#
 
       ; expression_statement
       [(list (? (stx-atom? 'expression_statement))
              (? (stx-many? 'eostmt)))
-       (bool #f)] ; TODO: verify that this is working as intended
+       #f]
       [(list (? (stx-atom? 'expression_statement))
              (? (stx-many? 'expression) e-stx)
              (? (stx-many? 'eostmt)))
@@ -149,7 +158,7 @@
       ; index_expression
       [(list (? (stx-atom? 'index_expression))
              (? (stx-atom? ":")))
-       ":"] ; DONE: just print it?
+       #f]
       [(list (? (stx-atom? 'index_expression))
              (? (stx-many? 'expression) e-stx))
        (helper e-stx)]
@@ -293,14 +302,16 @@
              (? (stx-atom? "/"))
              (? (stx-many? 'unary_expression) ue-stx))
        (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))]
-      ; removed "//" becuase according to matlab its not an Arithmetic Operator,
-      ; its for String and Character Formatting, see https://www.mathworks.com/help/matlab/matlab_prog/matlab-operators-and-special-characters.html
+      [(list (? (stx-atom? 'multiplicative_expression))
+             (? (stx-many? 'multiplicative_expression) me-stx)
+             (? (stx-atom? "\\"))
+             (? (stx-many? 'unary_expression) ue-stx))
+       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: this doesn't work yet
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? "^"))
              (? (stx-many? 'unary_expression) ue-stx))
        (int-binop (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))]
-      ;; ====== BELOW ARE array multiplication: do we handle this?? ====== ;;
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".*"))
@@ -311,7 +322,11 @@
              (? (stx-atom? "./"))
              (? (stx-many? 'unary_expression) ue-stx))
        (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise right division
-      ; REMOVED, again .\\ doesn't exist see above link
+      [(list (? (stx-atom? 'multiplicative_expression))
+             (? (stx-many? 'multiplicative_expression) me-stx)
+             (? (stx-atom? ".\\"))
+             (? (stx-many? 'unary_expression) ue-stx))
+       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise left division
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".^"))
@@ -389,10 +404,12 @@
              (? (stx-atom? "]")))
        (helper fil-stx)]
 
+      #|
       ; global_statement
       [(list (? (stx-atom? 'global_statement))
              (? (stx-many? 'identifier_list) il-stx))
        (list (helper il-stx))]
+      |#
       
       [_ (error 'build-ast "Unable to recognize expr: ~a" (~a (pretty-format (syntax->datum stx)) #:max-width 1000))]))]
     (helper stx)))
