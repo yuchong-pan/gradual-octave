@@ -52,11 +52,19 @@
       ; octave
       [(list (? (stx-atom? 'octave))
              (? (stx-many? 'translation_unit) tu-stx))
-             (list (helper tu-stx))]
+       (local [(define tu-val (helper tu-stx))
+               (define list-val (if (list? tu-val)
+                                         tu-val
+                                         (list tu-val)))]
+                list-val)]
       [(list (? (stx-atom? 'octave))
              (? (stx-many? 'octave) o-stx)
              (? (stx-many? 'translation_unit) tu-stx))
-       (append (helper o-stx) (list (helper tu-stx)))]
+       (local [(define tu-val (helper tu-stx))
+               (define list-val (if (list? tu-val)
+                                         tu-val
+                                         (list tu-val)))]
+        (append (helper o-stx) list-val))]
 
       ; translation_unit
       [(list (? (stx-atom? 'translation_unit))
