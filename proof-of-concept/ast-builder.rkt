@@ -52,7 +52,7 @@
       ; octave
       [(list (? (stx-atom? 'octave))
              (? (stx-many? 'translation_unit) tu-stx))
-             (helper tu-stx)]
+             (list (helper tu-stx))]
       [(list (? (stx-atom? 'octave))
              (? (stx-many? 'octave) o-stx)
              (? (stx-many? 'translation_unit) tu-stx))
@@ -406,3 +406,8 @@
 (define test3-tokens (token-list (tokenize (test3))))
 (define test3-parsed (parse (tokenize (test3))))
 (define test3-ast (build-ast test3-parsed))
+
+(define (test4) (open-input-string (file->string "examples/test_function.m")))
+(define test4-tokens (token-list (tokenize (test4))))
+(define test4-parsed (parse (tokenize (test4))))
+(define test4-ast (build-ast test4-parsed))
