@@ -166,7 +166,7 @@ selection_statement
 
 elseif_clause
         : ELSEIF expression statement_list
-    | elseif_clause ELSEIF expression statement_list
+        | elseif_clause ELSEIF expression statement_list
         ;
 
 iteration_statement

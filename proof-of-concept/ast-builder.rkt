@@ -410,7 +410,60 @@
              (? (stx-many? 'identifier_list) il-stx))
        (list (helper il-stx))]
       |#
-      
+        
+     ; elseif_clause
+     [(list (? (stx-atom? 'elseif_clause))
+            (? (stx-atom? "elseif"))
+            (? (stx-many? 'expression) e-stx)
+            (? (stx-many? 'statement_list) s-stx))
+      (if-stmt (helper e-stx) (helper s-stx) '())]
+     [(list (? (stx-atom? 'elseif_clause))
+            (? (stx-many? 'elseif_clause) eif-stx)
+            (? (stx-atom? "elseif"))
+            (? (stx-many? 'expression) e-stx)
+            (? (stx-many? 'statement_list) s-stx))
+      (if-stmt (if-stmt-cond (helper eif-stx)) (if-stmt-then (helper eif-stx)) ; if-stmt-cond throws an unbound id error...
+               (helper (list "elseif" e-stx s-stx)))] ; TODO: check if this is right?
+
+      ; selection_statement
+      [(list (? (stx-atom? 'selection_statement))
+             (? (stx-atom? "if"))
+             (? (stx-many? 'expression) e-stx)
+             (? (stx-atom? "\n\r")) ; TODO: not sure if this is stx-many
+             (? (stx-many? 'statement_list) s-stx)
+             (? (stx-atom? "end"))
+             (? (stx-atom? "\n\r")))
+       (if-stmt (helper e-stx) (helper s-stx) '())]
+      [(list (? (stx-atom? 'selection_statement))
+             (? (stx-atom? "if"))
+             (? (stx-many? 'expression) e-stx)
+             (? (stx-atom? "\n\r"))
+             (? (stx-many? 'statement_list) s-stx)
+             (? (stx-atom? "else"))
+             (? (stx-many? 'statement_list) s2-stx)
+             (? (stx-atom? "end"))
+             (? (stx-atom? "\n\r")))
+       (if-stmt (helper e-stx) (helper s-stx) (helper s2-stx))]
+      [(list (? (stx-atom? 'selection_statement))
+             (? (stx-atom? "if"))
+             (? (stx-many? 'expression) e-stx)
+             (? (stx-atom? "\n\r"))
+             (? (stx-many? 'statement_list) s-stx)
+             (? (stx-many? 'elseif_clause) eif-stx)
+             (? (stx-atom? "end"))
+             (? (stx-atom? "\n\r")))
+       (if-stmt (helper e-stx) (helper s-stx) (helper eif-stx))]
+      [(list (? (stx-atom? 'selection_statement))
+             (? (stx-atom? "if"))
+             (? (stx-many? 'expression) e-stx)
+             (? (stx-atom? "\n\r"))
+             (? (stx-many? 'statement_list) s-stx)
+             (? (stx-many? 'elseif_clause) eif-stx)
+             (? (stx-atom? "else"))
+             (? (stx-many? 'statement_list) s2-stx)
+             (? (stx-atom? "end"))
+             (? (stx-atom? "\n\r")))
+       (if-stmt (helper e-stx) (helper s-stx) (helper (list "elseif" (helper eif-stx) s2-stx)))]
       [_ (error 'build-ast "Unable to recognize expr: ~a" (~a (pretty-format (syntax->datum stx)) #:max-width 1000))]))]
     (helper stx)))
 
@@ -428,3 +481,7 @@
 (define test3-tokens (token-list (tokenize (test3))))
 (define test3-parsed (parse (tokenize (test3))))
 (define test3-ast (build-ast test3-parsed))
+
+(define (test4) (open-input-string (file->string "examples/elseif.rkt")))
+(define test4-tokens (token-list (tokenize (test4))))
+(define test4-parsed (parse (tokenize (test4))))
