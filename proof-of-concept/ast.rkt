@@ -1,7 +1,7 @@
 #lang typed/racket
 
-(provide Pgrm Stmt Expr Constant iden iden-name int bool string app int-binop bool-binop
-         int-compop string-compop decl assn func if-stmt Type arrow arrow? arrow-dom
+(provide Pgrm Stmt Expr Constant id int bool string app int-binop bool-binop
+         int-compop string-compop decl assn func if-stmt if-stmt-cond if-stmt-then Type arrow arrow? arrow-dom
          arrow-cod)
 
 (define-type Pgrm (Listof Stmt))
@@ -10,14 +10,13 @@
   (U Expr decl assn func if-stmt))
 
 (define-type Expr
-  (U iden Constant app int-binop bool-binop int-compop string-compop))
+  (U id Constant app int-binop bool-binop int-compop string-compop))
 
 (define-type Constant
   (U int bool string))
 
-(struct iden
-  ([name : Symbol]
-   [type : Type])
+(struct id
+  ([name : Symbol])
   #:transparent)
 
 (struct int
@@ -67,21 +66,22 @@
   #:transparent)
 
 (struct assn
-  ([vars : (Listof iden)]
+  ([vars : (Listof Symbol)]
    [expr : Expr])
   #:transparent)
 
 (struct func
   ([name : Symbol]
-   [args : (Listof iden)]
-   [rets : (Listof iden)]
+   [args : (Listof (Pair Symbol Type))]
+   [rets : (Listof (Pair Symbol Type))]
    [body : (Listof Stmt)])
   #:transparent)
 
 (struct if-stmt
   ([cond : Expr]
    [then : (Listof Stmt)]
-   [else : (Listof Stmt)]))
+   [else : (Listof Stmt)])
+  #:transparent)
 
 (define-type Type
   (U 'int 'bool 'string 'dynamic 'none arrow (Listof Type)))
