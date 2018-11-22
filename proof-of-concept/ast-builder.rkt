@@ -30,7 +30,7 @@
   (or (and (string->number (syntax->datum stx)) (int (string->number (syntax->datum stx))))
       (and (string=? (syntax->datum stx) "true") (bool #t))
       (and (string=? (syntax->datum stx) "false") (bool #f))
-      (string (syntax->datum stx)))) ; TODO: handle TRANSPOSE and NCTRANSPOSE
+      (string (syntax->datum stx))))
 
 (define (build-ast stx)
   (local [(define (helper stx)
@@ -83,6 +83,17 @@
       [(list (? (stx-atom? 'statement))
              (? (stx-many? 'expression_statement) es-stx))
        (helper es-stx)]
+
+      ; eostmt
+      [(list (? (stx-atom? 'eostmt))
+             (? (stx-atom? ",")))
+       ...] ;TODO
+      [(list (? (stx-atom? 'eostmt))
+             (? (stx-atom? ";")))
+       ...] ;TODO
+      [(list (? (stx-atom? 'eostmt))
+             (? (stx-atom? 'CR)))
+       ...] ;TODO
 
       ; expression_statement
       [(list (? (stx-atom? 'expression_statement))
@@ -190,7 +201,7 @@
              (? (stx-many? 'expression) e-stx)
              (? (stx-atom? ":"))
              (? (stx-many? 'or_expression) oe-stx))
-       (list)] ; TODO: the hecc is this doing?
+       (in-range (helper e-stx) (helper oe-stx) 1)] ; DONE: Create a vector, e.g. x = 1:10
 
       ; or_expression
       [(list (? (stx-atom? 'or_expression))
@@ -377,6 +388,12 @@
              (? (stx-many? 'func_ident_list) fil-stx)
              (? (stx-atom? "]")))
        (helper fil-stx)]
+
+      ; global_statement
+      [(list (? (stx-atom? 'global_statement))
+             (? (stx-many? 'identifier_list) il-stx))
+       (list (helper il-stx))]
+      
       [_ (error 'build-ast "Unable to recognize expr: ~a" (~a (pretty-format (syntax->datum stx)) #:max-width 1000))]))]
     (helper stx)))
 
