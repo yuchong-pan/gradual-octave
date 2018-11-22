@@ -91,6 +91,19 @@
              (? (stx-many? 'expression_statement) es-stx))
        (helper es-stx)]
 
+      #|
+      ; eostmt
+      [(list (? (stx-atom? 'eostmt))
+             (? (stx-atom? ",")))
+       ...] ;TODO
+      [(list (? (stx-atom? 'eostmt))
+             (? (stx-atom? ";")))
+       ...] ;TODO
+      [(list (? (stx-atom? 'eostmt))
+             (? (stx-atom? 'CR)))
+       ...] ;TODO
+      |#
+
       ; expression_statement
       [(list (? (stx-atom? 'expression_statement))
              (? (stx-many? 'eostmt)))
@@ -145,7 +158,7 @@
       ; index_expression
       [(list (? (stx-atom? 'index_expression))
              (? (stx-atom? ":")))
-       #f] ; TODO
+       #f]
       [(list (? (stx-atom? 'index_expression))
              (? (stx-many? 'expression) e-stx))
        (helper e-stx)]
@@ -155,7 +168,7 @@
              (? (stx-many? 'typed_identifier) ti-stx))
        (helper ti-stx)]
       [(list (? (stx-atom? 'primary_expression))
-             (? syntax? literal))
+             (? syntax? literal)) ; string literal
        (parse-literal literal)]
       [(list (? (stx-atom? 'primary_expression))
              (? (stx-atom? "("))
@@ -197,7 +210,7 @@
              (? (stx-many? 'expression) e-stx)
              (? (stx-atom? ":"))
              (? (stx-many? 'or_expression) oe-stx))
-       (list)] ; TODO: the hecc is this doing?
+       (in-range (helper e-stx) (helper oe-stx) 1)] ; DONE: Create a vector, e.g. x = 1:10
 
       ; or_expression
       [(list (? (stx-atom? 'or_expression))
@@ -303,22 +316,22 @@
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".*"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (int-binop (lambda (x y) (* x y)) (helper me-stx) (helper ue-stx))] ; TODO
+       (int-binop (lambda (x y) (* x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise multiplication
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? "./"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO
+       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise right division
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".\\"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO
+       (int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise left division
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".^"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (int-binop (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))] ; TODO
+       (int-binop (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise power
 
       ; unary_expression
       [(list (? (stx-atom? 'unary_expression))
@@ -327,15 +340,16 @@
       [(list (? (stx-atom? 'unary_expression))
              (? (stx-atom? "+"))
              (? (stx-many? 'postfix_expression) pe-stx))
-       (helper pe-stx)] ; no clue how to handle
+       (helper pe-stx)] ; DONE: just return this value?
       [(list (? (stx-atom? 'unary_expression))
              (? (stx-atom? "-"))
              (? (stx-many? 'postfix_expression) pe-stx))
-       (helper pe-stx)] ; no clue how to handle
+       (- (helper pe-stx))] ; DONE: Normally subtracts the second (and following) number(s) from the first ; negates the number if there is only one argument.
+
       [(list (? (stx-atom? 'unary_expression))
              (? (stx-atom? "~"))
              (? (stx-many? 'postfix_expression) pe-stx))
-       (helper pe-stx)] ; no clue how to handle (this one is presumably a negation)
+       (- (helper pe-stx))] ; DONE: same as "-"
         
       ; function_declare
       [(list (? (stx-atom? 'function_declare))
@@ -389,6 +403,14 @@
              (? (stx-many? 'func_ident_list) fil-stx)
              (? (stx-atom? "]")))
        (helper fil-stx)]
+
+      #|
+      ; global_statement
+      [(list (? (stx-atom? 'global_statement))
+             (? (stx-many? 'identifier_list) il-stx))
+       (list (helper il-stx))]
+      |#
+      
       [_ (error 'build-ast "Unable to recognize expr: ~a" (~a (pretty-format (syntax->datum stx)) #:max-width 1000))]))]
     (helper stx)))
 

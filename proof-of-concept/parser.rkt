@@ -16,9 +16,9 @@
      [".*"
       (token 'ARRAYMUL lexeme)]
      ["./"
-      (token 'ARRAYDIV lexeme)]
-     [".\\"
       (token 'ARRAYRDIV lexeme)]
+     [".\\"
+      (token 'ARRAYLDIV lexeme)]
      [".^"
       (token 'ARRAYPOW lexeme)]
      ["global"
