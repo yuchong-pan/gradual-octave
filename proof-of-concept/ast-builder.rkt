@@ -52,11 +52,19 @@
       ; octave
       [(list (? (stx-atom? 'octave))
              (? (stx-many? 'translation_unit) tu-stx))
-             (helper tu-stx)]
+       (local [(define tu-val (helper tu-stx))
+               (define list-val (if (list? tu-val)
+                                         tu-val
+                                         (list tu-val)))]
+                list-val)]
       [(list (? (stx-atom? 'octave))
              (? (stx-many? 'octave) o-stx)
              (? (stx-many? 'translation_unit) tu-stx))
-       (append (helper o-stx) (list (helper tu-stx)))]
+       (local [(define tu-val (helper tu-stx))
+               (define list-val (if (list? tu-val)
+                                         tu-val
+                                         (list tu-val)))]
+        (append (helper o-stx) list-val))]
 
       ; translation_unit
       [(list (? (stx-atom? 'translation_unit))
@@ -482,6 +490,11 @@
 (define test3-parsed (parse (tokenize (test3))))
 (define test3-ast (build-ast test3-parsed))
 
-(define (test4) (open-input-string (file->string "examples/elseif.rkt")))
+(define (test4) (open-input-string (file->string "examples/test_function.m")))
 (define test4-tokens (token-list (tokenize (test4))))
 (define test4-parsed (parse (tokenize (test4))))
+(define test4-ast (build-ast test4-parsed))
+
+(define (test5) (open-input-string (file->string "examples/elseif.rkt")))
+(define test5-tokens (token-list (tokenize (test5))))
+(define test5-parsed (parse (tokenize (test5))))
