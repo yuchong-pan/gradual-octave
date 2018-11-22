@@ -32,6 +32,10 @@
       (and (string=? (syntax->datum stx) "false") (bool #f))
       (string (syntax->datum stx))))
 
+; we can use this to skip empty or not-implemented expressions
+(define (valid? e)
+  (not (false? e)))
+
 (define (build-ast stx)
   (local [(define (helper stx)
       (match (syntax->list stx)
@@ -46,10 +50,13 @@
        (iden (stx->id id-stx) (stx->t t-stx))]
 
       ; octave
-      [(list (? (stx-atom? 'octave)) tu-stx) (helper tu-stx)]
       [(list (? (stx-atom? 'octave))
-             (? (stx-many? 'octave) n-o-stx) tu-stx)
-       (list (helper n-o-stx) (helper tu-stx))]
+             (? (stx-many? 'translation_unit) tu-stx))
+             (helper tu-stx)]
+      [(list (? (stx-atom? 'octave))
+             (? (stx-many? 'octave) o-stx)
+             (? (stx-many? 'translation_unit) tu-stx))
+       (append (helper o-stx) (list (helper tu-stx)))]
 
       ; translation_unit
       [(list (? (stx-atom? 'translation_unit))
@@ -70,11 +77,11 @@
       ; statement_list
       [(list (? (stx-atom? 'statement_list))
              (? (stx-many? 'statement) s-stx))
-       (list (helper s-stx))]
+       (filter valid? (list (helper s-stx)))]
       [(list (? (stx-atom? 'statement_list))
              (? (stx-many? 'statement_list) sl-stx)
              (? (stx-many? 'statement) s-stx))
-       (append (helper sl-stx) (list (helper s-stx)))]
+       (append (helper sl-stx) (filter valid? (list (helper s-stx))))]
 
       ; statement
       [(list (? (stx-atom? 'statement))
@@ -87,7 +94,7 @@
       ; expression_statement
       [(list (? (stx-atom? 'expression_statement))
              (? (stx-many? 'eostmt)))
-       (bool #f)] ; TODO: verify that this is working as intended
+       #f]
       [(list (? (stx-atom? 'expression_statement))
              (? (stx-many? 'expression) e-stx)
              (? (stx-many? 'eostmt)))
@@ -138,7 +145,7 @@
       ; index_expression
       [(list (? (stx-atom? 'index_expression))
              (? (stx-atom? ":")))
-       (bool #f)] ; TODO
+       #f] ; TODO
       [(list (? (stx-atom? 'index_expression))
              (? (stx-many? 'expression) e-stx))
        (helper e-stx)]
