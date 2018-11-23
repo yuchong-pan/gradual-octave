@@ -15,12 +15,6 @@ Octave is an open-source scientific programming language that uses a dynamic typ
 \subsection{Octave Benefits From Gradual Typing}
 In a paper describing program specializations used to produce efficient function overloading in Octave \cite{olmos2003turning}, Olmos et al. clearly illustrate the benefits of introducing static type-checking and shape analysis into Octave. In their work, static type and shape inferencing is used to directly reduce the number of type and shape checks needed at runtime and in doing so they can improve the efficiency of existing code. Functions and operators are highly overloaded in Octave to provide a simple interface for the end-users; however, the inevitable tradeoff for this flexibility is computational performance at runtime. The runtime system is responsible for type-checking, array shape determination, function call dispatching, and handling possible runtime errors. Hence Octave suffers from a number of computational inefficiencies that may be improved provided additional static type and shape context during the compilation step.
 
-\subsection{Octave Has Reference Parsers}
-It is also convenient that Octave itself is open-source and serves as a great point of reference. Specifically, the parser for Octave is available online, while that of MATLAB is proprietary and inaccessible. That being said, there are indeed many open source projects related to MATLAB and Octave parsing, which will help us parse Octave source code. For instance, the matlab-parser is an ANTLRv4 parser for MATLAB programming language, which converts the MATLAB source code to a concrete syntax tree representation, which is processed to an abstract syntax tree and control flow graph \cite{ericharley2013matlab}. Another MATLAB parser we can potentially reference, the mparser, is based on an ANTLR v3 grammar is also able to do source code translations to an abstract syntax tree \cite{ewiger2013decade}.
-
-\subsection{Octave Type Domain Is Interesting}
-Octave as a numerical computation language provides an interesting domain to design and implement syntax for static typing as dimensionality or shape also plays a significant role in determining type consistency. Analysis and consistency assertions for shape will be the basis of our long-term goals for the project.
-
 \section{Advantages of Gradual Typing}
 In this section, we highlight several advantages of introducing a gradual type system to an existing dynamically-typed programming language such as Octave.
 
@@ -29,53 +23,22 @@ It is widely acknowledged that static and dynamic type systems have their respec
 
 In a gradual type system, programmers are able to decide which regions of code in a computer program are statically or dynamically typed, making different pieces suitable for different stages and scenarios \cite{siek2006gradual}. The Blame-Subtyping Theorem implies that statically-typed regions in a gradual type system cannot be blamed for type-casting errors and are therefore easy to analyze \cite{siek2015refined}. Hence, computer programs written in a gradually-typed languages take advantage of static typing in some regions while enjoying the flexibility of dynamic typing in other regions, integrating the benefits from both type paradigms in a single program simultaneously.
 
-\subsection{Gradual Typing Can Be Implemented Efficiently}
-Statically-typed programs can be type-checked at compile time. However, partially-typed programs require runtime checks for runtime types of variables. The dynamic semantics of gradual type systems are usually defined by translation into an internal cast calculus like the Blame Calculus, which replaces implicit type casts with explicit type casts. For instance, the following steps illustrate the evaluation of a function application in GTLC based on the dynamic semantics defined in \cite{siek2006gradual} (assuming {\tt succ} has type {\tt int $\rightarrow$ int}):
-
-\begin{align*}
-& \text{\tt ($\lambda$ (x:?) (succ x)) 1} \\
-    \longmapsto \ & \text{\tt ($\lambda$ (x:?) (succ $\langle \text{\tt ?} \rightarrow \text{\tt int} \rangle$ x)) $\langle \text{\tt int} \rightarrow \text{\tt ?} \rangle$ 1} \\
-    \longmapsto \ & \text{\tt succ $\langle \text{\tt ?} \rightarrow \text{\tt int} \rangle$ $\langle \text{\tt int} \rightarrow \text{\tt ?} \rangle$ 1} \\
-    \longmapsto \ & \text{\tt succ 1} \\
-    \longmapsto \ & \text{\tt 2}
-\end{align*}
-
-Because of explicit casts at runtime, there may be concerns for the performance of implementations of gradual type systems. Fortunately, \citet{kuhlenschmidt2018efficient} present a space-efficient implementation approach that has competitive time efficiency on par with major fully statically- and dynamically-typed programming languages such as OCaml and Racket, and moreover that eliminates slowdowns for programs partially annotated with types.
-
 \subsection{Gradual Typing Enables Evolution of Programs}
 Due to flexibility of dynamically-typed programming languages, it is common in industry that programs are initially developed in a dynamically-typed programming language for reasons like fast prototyping, idea validation and scripting. However, dynamically-typed programming languages usually expose programs to safety and security issues, which sometimes lead to fatal errors and even monetary losses in production environments. Furthermore, the runtime performance of dynamically-typed programs is unable to compete with that of statically-typed languages as static type systems are able to check many aspects of computer programs well before they execute. In order to resolve the issues mentioned above, prototyping programs in industry are sometimes refactored to statically-typed languages, in order to reduce the possibility of errors as well as to enhance runtime performance.
 
 This process, nevertheless, is undoubtedly time-consuming and error-prone. The gradual guarantee ensures that computer programs remain well-typed as long as type annotations are correctly added \cite{siek2015refined}. The opposite---removing type annotations from a program does not break programs---is likewise always guaranteed in a gradual type system \cite{siek2015refined}. Therefore with the aid of gradual typing, programmers are able to gradually evolve their programs from untyped to fully-typed with type annotations without ever breaking the programs.
 
 \section{Related Projects}
-\subsection{Octave and MATLAB}
- In this section we explore and discuss existing projects developed for Octave related to typing. Moreover, having noted the significant commonality between MATLAB and Octave, we also extend our analysis of related projects to those developed for MATLAB.
  
- While some work has been done already with type and shape inferencing followed by language transformations for performance benefits, there has been a lack of discussion for applying the gradual typing approach directly.
-
-\subsubsection{Optimizing Function Overloading in Octave}
+\subsection{Optimizing Function Overloading in Octave}
 Octave and MATLAB were designed to be easy to use and have syntax that follow closely with mathematical notation. However, with dynamic type-checking, there are issues such as efficiency and the quality of the generated code. As briefly alluded to before, \citet{olmos2003turning} specifically address overloading in dynamically typed Octave programs. It introduces static typing for overloaded functions by making it explicit and restricting the input and output types of functions to match the actual function call. The main disadvantage to this approach is that the resulting Octave syntax is no longer as close to mathematical notation as before. However, by inferring the types used in the program for static typing, the system does not require any additional annotations from the user; hence the user developing their program is not greatly impacted. Since transformed program is statically typed, the overall computational performance of the system is improved. Thus, this paper shows how mixing dynamic and static typing can improve the overall system for Octave.
 
-\subsubsection{Telescoping Compiler for MATLAB}
-Another aspect in which the notion of static typing has been explored for MATLAB is through the method of telescoping. \citet{chauhan2003type} describe telescoping as "a strategy to automatically generate highly-optimized domain-specific libraries" and in their work suggest a method to create a telescoping system that generates high performance libraries from prototype MATLAB. In order to accomplish this, it needs to infer MATLAB types. The paper develops an approach of combining static and dynamic type inference roughly as follows: to start the inference, constraints are formed using a database of annotations containing one entry per procedure or operations. Unfortunately, the problem of inferring the types is NP-hard. In order to obtain a relatively more efficient algorithm, a few simplifying assumptions were made to reduce the same problem into an n-cliques problem which is NP-complete. One of the issues with this paper is that unanalyzed procedures will be ignored and those calls will not give any added information. This is a pitfall because all recursive calls are treated as unanalyzed procedures by this method. A key observation that we note from this paper is that typed MATLAB certainly has several benefits but the act of performing type inference can be an issue.
-
-\subsection{Gradual Typing Projects}
-Since the introduction of the theory of gradual typing, there has been many research projects and publications regarding adding an optional, gradual type systems to an existing dynamically-typed languages. In this section, we analyze several related projects and discuss how they are beneficial to our proposed project.
-
-\subsubsection{Diamondback Ruby (DRuby)}
+\subsection{Diamondback Ruby (DRuby)}
 Diamondback Ruby \cite{furr2009combining} is an extension to Ruby with an optional static type system implemented by type inference. Programmers are able to annotate Ruby programs with type annotations, which will be checked by DRuby at runtime using contracts and blamed properly. It is also worth noting that DRuby is able to infer types on dynamic meta-language constructs, such as {\tt eval}, through a combined static and dynamic analysis \cite{druby}.
 
 Although both DRuby and our proposed project aim to add an optional type system to an existing dynamically-typed language, there are some differences between the two projects. For instance, because DRuby uses static type inference to analyze Ruby programs, it requires static type-checking for the entire program. That is, some Ruby programs does not type-check in DRuby. This design, however, violates the criteria for gradual typing, which says gradual type systems must accept both fully untyped programs and fully typed programs \cite{siek2015refined}.  Our proposed gradual type system to Octave, in contrast, allows Octave programs to be partially type-checked; that is, some regions of Octave programs are able to remain dynamic.
 
 That being said, we can still learn much from the DRuby project. In the future, type inference could also be added to our proposed type system to Octave \emph{together with gradual typing}. \citet{garcia2015principal} introduce a new approach to apply type inference on a gradually-typed language, admitting parametric polymorphism. In addition, the annotation syntax for DRuby is similar to informal documentation of Ruby, which facilitates programmers to annotate their Ruby programs. We will use this syntax as a reference when designing our annotation syntax for Octave.
-
-\subsubsection{Typed Racket}
-Typed Racket \cite{tobin2006interlanguage} is the gradual counterpart of Racket, enabling incremental addition of annotations for static type-checking. It uses contracts to type-check at the boundaries of statically-typed regions and dynamically-typed regions at runtime. It also includes type inference, so certain type annotations may be omitted by the programmers.
-
-However, Typed Racket only supports gradual typing for whole modules. That is to say, a module can either be fully typed or be fully untyped, and boundaries of statically-typed regions and dynamically-typed regions can only exist at the boundaries of modules. This feature of Typed Racket guarantees that dynamic type-checking can only happen at the boundaries of modules, improving runtime performance of Typed Racket to some extent. However, it also introduces some inconvenience on the programmer side. As reported in \cite{figueroa2012practical}, the limitations of module-level gradual typing requires to annotate all values with type {\tt Any} in a module.
-
-Typed Racket has recently begun to support refinement and dependent function types as experimental features \cite{kent2017refinement}. Dependent types were first introduced by Xi and Pfenning \cite{xi1998eliminating} to eliminate array bound checks with a type-based approach. If time permits, we intend to additionally investigate the use of dependent and refinement types in our proposed type system to Octave to allow for array bound and matrix dimension checks.
-
 
 \section{Project Distinction and Novel Aspects}
 There are currently no gradual typing projects for Octave, and from the discussion above we have identified several advantages in applying gradual typing to the language.
@@ -107,11 +70,6 @@ translation_unit
         | FUNCTION function_declare eostmt
           statement_list eostmt ENDFUNCTION
           eostmt
-        ;
-
-typed_identifier
-        : IDENTIFIER
-        | IDENTIFIER ':' IDENTIFIER
         ;
 
 primary_expression
@@ -171,32 +129,6 @@ Using the brag module, we obtain a parse function from the language file shown a
 \subsubsection{Intermediate Representation}
 Now that we have a structure that can be easily traversed by Racket, we are ready to transform the parsed syntax entity to an intermediate abstract syntax tree. Below we provide brief example structures that are used for this syntax, though we elaborate more on these in the main section to follow on type-checking.
 
-\begin{figure}[h]
-    \begin{lstlisting}[language=racket]
-(define-type I-TOC
-  [i-null]
-  [i-id-type (name symbol?) (type Type?)]
-  [i-assn-decl (vars (listof i-id-type?))
-               (expr (or/c Expr? I-TOC?))]
-  [i-app (fun (or/c Expr? I-TOC?))
-         (args (listof (or/c Expr? I-TOC?)))]
-  [i-int-binop (op procedure?)
-               (lhs (or/c Expr? I-TOC?))
-               (rhs (or/c Expr? I-TOC?))]
-  [i-bool-binop (op procedure?)
-                (lhs (or/c Expr? I-TOC?))
-                (rhs (or/c Expr? I-TOC?))]
-  [i-func (name i-id-type?)
-          (args (listof i-id-type?))
-          (rets (listof i-id-type?))
-          (body (listof (or/c Stmt? I-TOC?)))]
-  [i-if-stmt (cond (or/c Expr? I-TOC?))
-             (then (listof (or/c Stmt? I-TOC?)))
-             (else (listof (or/c Stmt? I-TOC?)))])
-    \end{lstlisting}
-    \caption[]{abstract syntax representation of source code}
-\end{figure}
-
 To generate the abstract syntax tree, we use the PLAI Scheme language \cite{plaischeme} to match on the syntax structures produced by the previous step. To do this, we split each syntax object into a list using the syntax->list operation and this effectively allows us to parse 1) the current rule 2) the arguments for the rule.
 
 We then extract the meaningful information captured within each rule, and produce a list of statement or function entities that describe the static form of the program. This includes any typing information that was declared within the source code. Figure \ref{fig:intermediate} is the example intermediate syntax obtained from this step.
@@ -226,25 +158,6 @@ We then extract the meaningful information captured within each rule, and produc
 
 \subsubsection{Desugaring}
 Finally, we must desugar the intermediate syntax into the final abstract syntax. In this stage, one major goal is to insert declarations for variable assignments as they are being assigned to. We do this by scoping variables to environments and performing lookups to find ``unbound'' variables that are being assigned to. Once bound, the type of the variable is fixed from that point onwards. Additionally, in the process of converting to the abstract syntax we strip off unnecessary type information that can be bundled with identifiers.
-
-\begin{figure}[h]
-    \begin{lstlisting}[language=racket]
-(list
- (func
-  'f
-  '((y . dynamic) (x . dynamic))
-  '((outy . dynamic) (outx . dynamic))
-  (list
-   (decl 'outx 'dynamic)
-   (assn '(outx) (id 'y))
-   (decl 'outy 'dynamic)
-   (assn '(outy) (id 'x))))
- (decl 'x 'dynamic)
- (assn '(x) (app (id 'f) (list (int 1) (int 2)))))
-    \end{lstlisting}
-    \caption[]{Abstract syntax for source code}
-    \label{fig:ast}
-\end{figure}
 
 At this point, the original source file has been transformed into our desired form and we can perform type-checking on it. In the section to follow, we will elaborate on the form and use of our abstract syntax.
 
@@ -324,43 +237,9 @@ The main extension of our type system to the GTLC type system is the addition of
 \end{figure}
 
 \subsubsection{Abstract Syntax Tree (AST)}
-In our abstract syntax tree (AST), statements will be defined as all of the statements we want to support in type-checking, such as expressions, declarations, assignments, function definitions, and if-statements. Note that expressions are always associated with types, whereas statements that are not expressions do not have types. The AST will look similar to Figure \ref{fig:ast-stmt}.
+In our abstract syntax tree (AST), statements will be defined as all of the statements we want to support in type-checking, such as expressions, declarations, assignments, function definitions, and if-statements. Note that expressions are always associated with types, whereas statements that are not expressions do not have types.
 
-\begin{figure}[h]
-    \begin{lstlisting}[language=racket]
-(define-type Stmt
-  (U Expr decl assn func if-stmt))
-    \end{lstlisting}
-    \caption[]{AST node for statements}
-    \label{fig:ast-stmt}
-\end{figure}
-
-We will dig deeper into a few expressions as either identifiers, constants, application, binary operations, or comparison operations. An expression is one of an identifier, a constant, a function application, a binary operation or a comparison operation, as illustrated in Figure \ref{fig:ast-expr}.
-
-\begin{figure}[h]
-    \begin{lstlisting}[language=racket]
-(define-type expr
-  (u id constant app int-binop bool-binop
-     int-compop string-compop))
-    \end{lstlisting}
-    \caption[]{AST nodes for expressions}
-    \label{fig:ast-expr}
-\end{figure}
-
-Let's take a look at how {\tt int-compop} is represented to have an idea of how the other types of expressions will be represented. For {\tt int-compop}, we have a Racket function that represents the comparison operation, such as {\tt =}, {\tt <}, or even a lambda function {\tt (lambda (x y) (not (= x y)))}. Since we know what types this compop function needs to handle, we can introduce it as {\tt (-> Integer Integer Boolean)} where the last type {\tt Boolean} is the output and the rest are inputs. Given this function, the remaining is to store the two operatands, which can be represented as arbitrary expressions. The structure for {\tt int-compop} is depicted in Figure \ref{fig:ast-compop}.
-
-\begin{figure}[h]
-    \begin{lstlisting}[language=racket]
-(struct int-compop
-  ([op  : (-> Integer Integer Boolean)]
-   [lhs : Expr]
-   [rhs : Expr]))
-    \end{lstlisting}
-    \caption[]{AST node for {\tt int-compop}}
-    \label{fig:ast-compop}
-\end{figure}
-
-Another important AST node is the function definitions. Unlike many other programming languages, Octave requires us to specify both the identifiers for arguments and those for return variables. Therefore, in our proposed gradual typing extension to Octave, that means both the input and output parameters can be type annotated. To represent that, we use a pair of a symbol and a {\tt Type} type to represent each argument and each return variable and store them in two lists. The body of the function may also need to be type-checked. We can achieve that by creating a list of statements to represent the body. This way, we can recursively call the type-checker for statement to type-check the body of a function.
+An important AST node is the function definitions. Unlike many other programming languages, Octave requires us to specify both the identifiers for arguments and those for return variables. Therefore, in our proposed gradual typing extension to Octave, that means both the input and output parameters can be type annotated. To represent that, we use a pair of a symbol and a {\tt Type} type to represent each argument and each return variable and store them in two lists. The body of the function may also need to be type-checked. We can achieve that by creating a list of statements to represent the body. This way, we can recursively call the type-checker for statement to type-check the body of a function.
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -372,18 +251,6 @@ Another important AST node is the function definitions. Unlike many other progra
     \end{lstlisting}
     \caption[]{AST node for {\tt func}}
     \label{fig:func}
-\end{figure}
-
-Lastly, we need to define what a {\tt Type} node is. This type of node specifies the types we will handle type-checking for. This includes integers, Boolean, strings, dynamic, none (for functions with no return values), arrow, and star which are the types we explained earlier in Section \ref{sec:consistency}. Figure \ref{fig:type} includes an example of how the AST node for Type can be represented.
-
-\begin{figure}[h]
-    \begin{lstlisting}[language=racket]
-(define-type Type
-  (U 'int 'bool 'string 'dynamic 'none arrow
-     (Listof Type)))
-    \end{lstlisting}
-    \caption[]{AST nodes for types}
-    \label{fig:type}
 \end{figure}
 
 Now that we have an idea of how to represent Octave programs as an AST, we can use pass this AST into our type-checker to check for type consistency. 
@@ -408,8 +275,7 @@ Note that Octave allows the left-hand side of an assignment to have less variabl
         (lambda (name)
           (local [(define result (assoc name env))]
             (if (false? result)
-                (error 'typecheck-stmt
-                       "Unbound identifier")
+                (error 'typecheck-stmt "...")
                 (cdr result))))
         names))
      (define expect-length (length expect-types))
@@ -427,13 +293,11 @@ Note that Octave allows the left-hand side of an assignment to have less variabl
      (define actual-length (length actual-types))]
    (cond
      [(not (= expect-length actual-length))
-      (error 'typecheck-stmt
-             "Assignment arity mismatch")]
+      (error 'typecheck-stmt "...")]
      [(consistent-list? expect-types actual-types)
       env]
      [else
-      (error 'typecheck-stmt
-             "Assignment type mismatch")]))]
+      (error 'typecheck-stmt "...")]))]
     \end{lstlisting}
     \caption[]{Type-checking case for assignments}
     \label{fig:assn}
@@ -476,10 +340,8 @@ It is also worth noting that we may apply a function with the {\tt ?} type becau
          (if (consistent-list? expect-types
                                adjusted-actual)
              return-types
-             (error 'typecheck-expr
-                    "Argument type mismatch")))
-       (error 'typecheck-expr
-              "Try to apply a non-function")))]))
+             (error 'typecheck-expr "...")))
+       (error 'typecheck-expr "...")))]))
 
 (: fun-dom (-> Type (Listof Type)))
 (define (fun-dom fun-type)
@@ -502,9 +364,17 @@ It is also worth noting that we may apply a function with the {\tt ?} type becau
 The rest of the type-checking cases are very similar and simpler than the two cases we described above. They can be implemented by calling the helper functions for statements and expressions as well as calling the consistency function to check the consistency of two types.
 
 \section{Plan for Next Steps}
-We intend to enrich and further introduce nuances into our gradual typing scheme by delving into features such as static dimension checking (as matrices are a core component of the language domain) and other more domain-specific aspects. More specifically, in order to meet our team's full project goals we plan on introducing matrices, as well as removing type annotations (i.e. translate back to normal octave).
+As the next step to meet the team's full project goals, and in a fashion akin to both TypeScript and typing aspects, we will compile the augmented Octave scripts back to the original syntax to be run. In order to compile the typed Octave code into executable Octave code, we will recursively generate Octave code directly from our high-level AST. We believe that this will be a manageable task as, given instances of our AST representation, there is sufficient information to re-create the original semantics. This is beneficial because not only can a user type check their code, they can also execute the type checked code in their original environment. However, we approach this with the hope that in the future a compiler that capitalizes on the performance benefits may be developed as a follow-up project; though this is out of scope for the current project.
 
-Our Octave can include matrices to do mathematical calculations such as element operations, vector operations, and other ways to manipulate matrices. This will not be trivial because it's multidimensional, there can be dynamic types as well as static types.
+In addition, we intend to enrich and further introduce nuances into our gradual typing scheme by delving into features such as static dimension checking provided that matrices are a core component of the language domain. Octave can include matrices to do mathematical calculations such as element operations, vector operations, and other ways to manipulate matrices. We believe that this is a challenging task given that we introduce the notion of shapes as an additional constraint to our type checking. Furthermore, there will inherently be many syntactic ambiguities introduced to parsing. One such example is the ambiguity between matrix extraction and regular function call, another is simply the matter that many primitive operators such as arithmetic operators are heavily overloaded in Octave and so correctly capturing the surrounding context is an important matter.
+
+For this task, we now propose the following preliminary syntax for matrices and lists (which we treat as a simple desugaring to a 1 by n matrix):
+\begin{align*}
+& \text{\tt identifierA : matrix[Type][n, m]} \\
+& \text{\tt identifierB : list[Type]}
+\end{align*}
+
+For example, if we had {\tt m:matrix[int][2,2] = [1,2; 3,4]}, this will successfully type check. In contrast, if we have  {\tt m:matrix[int][2,2] = [1,2; 3,4; 5,6]}, this will violate the dimension check as we create a 3x2 matrix instead of the declared 2x2. Additionally, {\tt m:matrix[string][2,2] = [1,2; 3,4]} will violate the type consistency of the matrix. Since we are introducing gradual typing, we will also allow {\tt matrix[2,2] = [1,2; 3,4]} which would allow any type to be assigned to the matrix.
 
 We hope to create a meaningful and useful tool for Octave developers to use and ideally contribute towards in the future.
 
