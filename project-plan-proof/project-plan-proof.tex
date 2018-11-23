@@ -3,7 +3,7 @@
 %%%% As of March 2017, [siggraph] is no longer used. Please use sigconf (above) for SIGGRAPH conferences.
 
 %%%% Proceedings format for SIGPLAN conferences 
-\documentclass[sigplan]{acmart}
+\documentclass[sigplan, xcolor=usenames,dvipsnames]{acmart}
 
 %%%% Proceedings format for SIGCHI conferences
 % \documentclass[sigchi, review]{acmart}
@@ -13,7 +13,9 @@
 
 
 \usepackage{booktabs} % For formal tables
-\usepackage{listings}
+\usepackage{mathpartir} % available from http://cristal.inria.fr/~remy/latex/
+
+\input{racket.inc}
 
 % Copyright
 % \setcopyright{none}

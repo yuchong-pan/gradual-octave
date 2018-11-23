@@ -1,0 +1,62 @@
+\usepackage{listings}
+\usepackage{soul}
+
+\lstset{% general command to set parameter(s) 
+basicstyle=\ttfamily\footnotesize, % print whole listing small 
+keywordstyle=\bfseries,% bold black keywords 
+identifierstyle=, % nothing happens
+numbers=left,                   % where to put the line-numbers
+%stringstyle=\ttfamily, % typewriter type for strings
+stepnumber=1,                   % the step between two line-numbers. If it is 1 each line will be numbered
+numbersep=3pt,                  % how far the line-numbers are from the code
+numberstyle=\tiny\color{gray},
+%xleftmargin=5.0ex,
+escapechar=!,
+commentstyle=\itshape\color{OliveGreen},
+%escapeinside={<@}{@>},
+showstringspaces=false % no special string spaces, because fugly.
+}
+
+\definecolor{light-gray}{gray}{0.40}
+
+% must look at <https://tex.stackexchange.com/questions/8851/how-can-i-highlight-some-lines-from-source-code>
+% for fancy boxes/highlighting in lstlistings
+
+\lstdefinelanguage{racket} {
+  morekeywords=[1]{define, define-syntax, define-macro, lambda, define-stream, stream-lambda},
+  morekeywords=[2]{begin, call-with-current-continuation, call/cc,
+    call-with-input-file, call-with-output-file, case, cond,
+    do, else, for-each, if,
+    let*, let, let-syntax, letrec, letrec-syntax,
+    define-context, define-controller, Integer, Boolean, get, when-required, when-provided,
+    maybe_publish, require, submod, or/c, ->, \#\%module-begin,
+    always_publish, with-syntax, define-struct/contract, syntax-case,
+    define/contract,
+    let-values, let*-values,
+    module, provide,
+    and, or, not, delay, force,
+    \#`, \#',
+    \#lang, implement, begin-for-syntax, rename-out,
+    quasiquote, quote, unquote, unquote-splicing,
+    map, fold, syntax, syntax-rules, eval, environment, query },
+  morekeywords=[3]{import, export},
+  alsoletter={',`,-,/,>,<,\#,\%},
+  morecomment=[l]{;},
+%  literate={lambda}{{\lambdaup}}1, % lambda -- look at https://tex.stackexchange.com/questions/119879/math-symbols-in-tt-font
+  moredelim=**[is][\color{light-gray}]{<<@<<}{>>@>>},
+  moredelim=**[is][\itshape\color{OliveGreen}]{<<;<<}{>>;>>},
+  morecomment=[s]{\#|}{|\#},
+  sensitive=true,
+}
+
+\lstdefinestyle{box}{
+  keywordstyle=\color{blue},
+  commentstyle=\color{green},
+}
+
+\def\inlineracket{\lstinline[basicstyle=\ttfamily\normalsize,language=racket]}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "progfw.main"
+%%% End: 

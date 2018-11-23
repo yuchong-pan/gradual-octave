@@ -1,6 +1,9 @@
 \newcommand{\fig}[2]{\includegraphics[width=#1\textwidth]{#2}}
 \newcommand{\centerfig}[2]{\begin{center}
 \color{black} \includegraphics[width=#1\textwidth]{#2}\end{center}}
+\newcommand \bnfdef  {\mathrel{::=}}
+\newcommand \bnfalt  {\mathrel{|}}
+\newcommand \tc[3]{{#1} \vdash {#2} : {#3}}
 
 \section{Introduction}
 Static and dynamic type systems for languages have their own distinct advantages. For instance, a static type system enables early error detection and enforces a certain extent of code style within a collaborative setting. On the other hand, the lightweight workflow associated with dynamic typing is highly suited for rapid prototyping and iterative approaches. Over the past several decades, researchers in the programming language community have been working on integrating aspects of both static typing and dynamic typing with the goal of allowing programmers access to advantages of both type systems. Gradual typing---originally proposed by \citet{siek2006gradual}---is one such solution that combines the two type systems and allows the end-users to optionally provide typing information. In recent times, it has largely gained traction in the programming language community and has been adopted by many programming languages both within industry and academia. Certain examples include Typed Racket \cite{tobin2006interlanguage}, TypeScript \cite{bierman2014understanding} and Reticulated Python \cite{vitousek2014design}.
@@ -84,7 +87,7 @@ Additionally, previous projects such as \citet{chauhan2003type} and \citet{olmos
 In fact, there are also performance benefits to adopting a gradual typing approach, in addition to the previous telescoping and program specialization techniques employed above. We again cite that recent development of gradually-typed compilers have been successful in attaining performance on par with statically-typed compilers \cite{kuhlenschmidt2018efficient}. As a result, the Octave variant that we propose will for additional optimizations in the compile phase and therefore have at least equal or better performance to existing compilers in general depending on the proportion of statically-typed code.
 
 \section{Proof of Concept}
-For the full proof-of-concept, see the project repository at <insert link to public repository>. Below, we provide a tutorial for building the pipeline used to type-check our proposed gradually-typed Octave source files. To demonstrate the entire process of conversion from source code to a check result, we will refer to the test file [examples/tutorial.rkt](link to file) and show various stages of output as it is processed through our application.
+For the full proof-of-concept, see the project repository at \url{https://github.com/yuchong-pan/cpsc-311-project}. Below, we provide a tutorial for building the pipeline used to type-check our proposed gradually-typed Octave source files. To demonstrate the entire process of conversion from source code to a check result, we will refer to the test file [examples/tutorial.rkt](link to file) and show various stages of output as it is processed through our application.
 
 \subsection{Pre-processing}
 Before we begin static analysis of type information for a source file, we must convert it to our abstract representation. The three main stages of parsing include 1) tokenization 2) parsing to a Racket-friendly entity 3) parsing the entity to an intermediate representation 4) desugaring into our internal abstract syntax tree. As the first two steps are largely coupled, we address them together in a single section below.
@@ -92,51 +95,158 @@ Before we begin static analysis of type information for a source file, we must c
 \subsubsection{Tokenization and Parsing}
 For this proof of concept, we decided to perform our own lexical analysis and parsing using modified [BNF](link to our language file) that defines a subset of Octave with type information. However, we note that future work could be done to extend the official Octave open source parser \cite{johneaton2018octaveparser} to handle this stage for completeness.
 
-Below are examples of rules used in our BNF:
+Figure \ref{fig:bnf} includes examples of rules used in our BNF.
+
 \begin{figure}[h]
-  \centerfig{0.55}{figs/language.png}
-  \caption[]{Select rules from language.rkt}
+    \begin{lstlisting}
+octave
+        : translation_unit
+        | octave translation_unit
+        ;
+
+translation_unit
+        : statement_list
+        | FUNCTION function_declare eostmt
+          statement_list eostmt ENDFUNCTION
+          eostmt
+        ;
+
+typed_identifier
+        : IDENTIFIER
+        | IDENTIFIER ':' IDENTIFIER
+        ;
+
+primary_expression
+        : typed_identifier
+        | BOOLEAN
+        | CONSTANT
+        | STRING_LITERAL
+        | '(' expression ')'
+        | '[' ']'
+        | '[' array_list ']'
+        ;
+    \end{lstlisting}
+    \caption[]{Selected BNF rules}
+    \label{fig:bnf}
 \end{figure}
 
 We begin this stage by performing both lexical analysis and parsing using tools from the [brag](http://docs.racket-lang.org/brag/) library. In the first step of pre-processing, we load Octave source code into memory as a string and perform lexical analysis using a lexer function. For this, we have defined tokens for each of the terminals defined in the language such as for identifiers, constants, as well as literal characters.
 
-The result of passing the source code string to this method is a generator function that, when called, generates a token list such as the one pictured below.
+The result of passing the source code string to this method is a generator function that, when called, generates a token list such as the one pictured in Figure \ref{fig:token}.
 
 \begin{figure}[h]
-  \centerfig{0.4}{figs/tokens.png}
-  \caption[]{Example token list for tutorial.rkt}
+    \begin{lstlisting}[language=racket]
+(list
+ (token-struct 'IDENTIFIER "a" #f #f #f #f #f)
+ (token-struct 'WHITESPACE " " #f #f #f #f #t)
+ (token-struct '= "=" #f #f #f #f #f)
+ (token-struct 'WHITESPACE " " #f #f #f #f #t)
+ (token-struct 'CONSTANT "3" #f #f #f #f #f))
+    \end{lstlisting}
+    \caption[]{Sample token list}
+    \label{fig:token}
 \end{figure}
 
-Using the brag module, we obtain a parse function from the language file shown above which takes in a token list (or generator function) and ultimately constructs a [syntax object](https://docs.racket-lang.org/guide/stx-obj.html) which provides an easily traversable form for us to desugar. The following syntax form is an abstract representation of the input source file in terms of the defined BNF: 
+Using the brag module, we obtain a parse function from the language file shown above which takes in a token list (or generator function) and ultimately constructs a [syntax object](https://docs.racket-lang.org/guide/stx-obj.html) which provides an easily traversable form for us to desugar. The syntax in Figure \ref{fig:syntax} form is an abstract representation of the input source file in terms of the defined BNF. 
 
 \begin{figure}[h]
-  \centerfig{0.3}{figs/brag-ast.png}
-  \caption[]{syntax structure for tutorial.rkt}
+    \begin{lstlisting}[language=racket]
+'(octave
+  (octave
+   (translation_unit
+    "function"
+    (function_declare
+     (func_return_list
+      "["
+      (func_ident_list
+       (func_ident_list (typed_identifier "outx"))
+       ","
+       (typed_identifier "outy"))
+      "]")
+     "="
+     ;; ...
+    \end{lstlisting}
+    \caption[]{Sample syntax structure}
+    \label{fig:syntax}
 \end{figure}
 
 \subsubsection{Intermediate Representation}
 Now that we have a structure that can be easily traversed by Racket, we are ready to transform the parsed syntax entity to an intermediate abstract syntax tree. Below we provide brief example structures that are used for this syntax, though we elaborate more on these in the main section to follow on type-checking.
 
 \begin{figure}[h]
-  \centerfig{0.4}{figs/intermediate-struct.png}
-  \caption[]{abstract syntax representation of source code}
+    \begin{lstlisting}[language=racket]
+;; Intermediate Typed Octave Construct
+(define-type I-TOC
+  [i-null]
+  [i-id-type (name symbol?) (type Type?)]
+  [i-assn-decl (vars (listof i-id-type?))
+               (expr (or/c Expr? I-TOC?))]
+  [i-app (fun (or/c Expr? I-TOC?))
+         (args (listof (or/c Expr? I-TOC?)))]
+  [i-int-binop (op procedure?)
+               (lhs (or/c Expr? I-TOC?))
+               (rhs (or/c Expr? I-TOC?))]
+  [i-bool-binop (op procedure?)
+                (lhs (or/c Expr? I-TOC?))
+                (rhs (or/c Expr? I-TOC?))]
+  [i-func (name i-id-type?)
+          (args (listof i-id-type?))
+          (rets (listof i-id-type?))
+          (body (listof (or/c Stmt? I-TOC?)))]
+  [i-if-stmt (cond (or/c Expr? I-TOC?))
+             (then (listof (or/c Stmt? I-TOC?)))
+             (else (listof (or/c Stmt? I-TOC?)))])
+    \end{lstlisting}
+    \caption[]{abstract syntax representation of source code}
 \end{figure}
 
 To generate the abstract syntax tree, we use the [PLAI] (https://docs.racket-lang.org/plai/plai-scheme.html) language to match on the syntax structures produced by the previous step. To do this, we split each syntax object into a list using the syntax->list operation and this effectively allows us to parse 1) the current rule 2) the arguments for the rule.
 
-We then extract the meaningful information captured within each rule, and produce a list of statement or function entities that describe the static form of the program. This includes any typing information that was declared within the source code. Below is the example intermediate syntax obtained from this step:
+We then extract the meaningful information captured within each rule, and produce a list of statement or function entities that describe the static form of the program. This includes any typing information that was declared within the source code. Figure \ref{fig:intermediate} is the example intermediate syntax obtained from this step.
 
 \begin{figure}[h]
-  \centerfig{0.5}{figs/intermediate-repr.png}
-  \caption[]{intermediate syntax for source code}
+    \begin{lstlisting}[language=racket]
+(list
+ (i-func
+  (i-id-type 'f 'dynamic)
+  (list (i-id-type 'y 'dynamic)
+        (i-id-type 'x 'dynamic))
+  (list (i-id-type 'outy 'dynamic)
+        (i-id-type 'outx 'dynamic))
+  (list
+   (i-assn-decl (list (i-id-type 'outx 'dynamic))
+                      (i-id-type 'y 'dynamic))
+   (i-assn-decl (list (i-id-type 'outy 'dynamic))
+                      (i-id-type 'x 'dynamic))))
+ (i-assn-decl
+  (list (i-id-type 'x 'dynamic))
+  (i-app (i-id-type 'f 'dynamic)
+         (list (int 1) (int 2)))))
+    \end{lstlisting}
+    \caption[]{Intermediate syntax for source code}
+    \label{fig:intermediate}
 \end{figure}
 
 \subsubsection{Desugaring}
-Finally, we must desugar the intermediate syntax into the final abstract syntax. In this stage, one major goal is to insert declarations for variable assignments as they are being assigned to. We do this by scoping variables to environments and performing lookups to find “unbound” variables that are being assigned to. Once bound, the type of the variable is fixed from that point onwards. Additionally, in the process of converting to the abstract syntax we strip off unnecessary type information that can be bundled with identifiers.
+Finally, we must desugar the intermediate syntax into the final abstract syntax. In this stage, one major goal is to insert declarations for variable assignments as they are being assigned to. We do this by scoping variables to environments and performing lookups to find ``unbound'' variables that are being assigned to. Once bound, the type of the variable is fixed from that point onwards. Additionally, in the process of converting to the abstract syntax we strip off unnecessary type information that can be bundled with identifiers.
 
 \begin{figure}[h]
-  \centerfig{0.5}{figs/final-ast.png}
-  \caption[]{abstract syntax for source code}
+    \begin{lstlisting}[language=racket]
+(list
+ (func
+  'f
+  '((y . dynamic) (x . dynamic))
+  '((outy . dynamic) (outx . dynamic))
+  (list
+   (decl 'outx 'dynamic)
+   (assn '(outx) (id 'y))
+   (decl 'outy 'dynamic)
+   (assn '(outy) (id 'x))))
+ (decl 'x 'dynamic)
+ (assn '(x) (app (id 'f) (list (int 1) (int 2)))))
+    \end{lstlisting}
+    \caption[]{Abstract syntax for source code}
+    \label{fig:ast}
 \end{figure}
 
 At this point, the original source file has been transformed into our desired form and we can perform type-checking on it. In the section to follow, we will elaborate on the form and use of our abstract syntax.
@@ -148,86 +258,141 @@ One can view dynamic typing as a type system with only one type. Thus, the main 
 
 In order to support the unknown type, the type equality relation is no longer working in a gradual type system. Consider a function f with type int -> int, and a variable x with type ?. A dynamic system should allow f to be applied on x, and cast x from type ? to type int in the runtime, whereas type ? is not equal to type int. Hence, an important modification of a gradual type system is to replace the type equality relation with the type consistency relation [Siek and Taha 2006], which is defined as follows. Here, the arrow type (-> T T) is an explicit function type, and the star type T * T is a pair type.
 
-B ::= int | bool | string
-T ::= B | ( T T) | T*T | ? | none
-S ::= s; s | x := e | if e1 then e2 else e3 endif
+\begin{figure}[h]
+    \[\begin{array}{rcl}
+        B & \bnfdef & \texttt{int} \bnfalt \texttt{bool} \bnfalt \texttt{string} \\
+        T & \bnfdef & B \bnfalt \texttt{($\rightarrow$ T T)} \bnfalt \texttt{T $\times$ T} \bnfalt \texttt{?} \bnfalt \texttt{none}
+    \end{array}\]
+    \caption{Type definitions}
+    \label{fig:types}
+\end{figure}
 
-Consistency: T  T
-?  T  T  ?  B  B  
-T1  T3  T2  T4 T1  T2  T2  T4    T1  T3  T2  T4 T1 * T2  T2 * T4   
+\begin{figure}[h]
+    \begin{mathpar}
+        \infer{~}{\texttt{?} \sim T}
+        \qquad \infer{~}{T \sim \texttt{?}}
+        \qquad \infer{~}{B \sim B} \\
+        \qquad \infer{T_1 \sim T_3 \quad T_2 \sim T_4}{T_1 \to T_2 \sim T_3 \to T_4}
+        \qquad \infer{T_1 \sim T_3 \quad T_2 \sim T_4}{T_1 \times T_2 \sim T_3 \times T_4}
+    \end{mathpar}
+    \caption{Type consistency rules}
+    \label{fig:consistency}
+\end{figure}
 
-The type consistency relation needs to respect several properties. First, type consistency should *conservatively* extend the type equality relation [Garcia et al.’s AGT paper]. Described as a criterion for gradual typing, a gradual type system should behave exactly the same for fully statically-typed programs [Siek et al. 2015]. Hence, two basic types T1 and T2 are consistent if and only if they are equal. Second, it is easy to see that type consistency should be reflexive, symmetric, but not transitive. To see the non-transitivity, if consistency were transitive, then int ~ ? and ? ~ bool would imply that int ~ bool, which would violate the criterion for gradual typing stated above. In our type-checker, we implemented the following helper function to check type consistency of two types.
+The type consistency relation needs to respect several properties. First, type consistency should *conservatively* extend the type equality relation [Garcia et al.'s AGT paper]. Described as a criterion for gradual typing, a gradual type system should behave exactly the same for fully statically-typed programs [Siek et al. 2015]. Hence, two basic types T1 and T2 are consistent if and only if they are equal. Second, it is easy to see that type consistency should be reflexive, symmetric, but not transitive. To see the non-transitivity, if consistency were transitive, then int ~ ? and ? ~ bool would imply that int ~ bool, which would violate the criterion for gradual typing stated above. In our type-checker, we implemented the following helper function to check type consistency of two types.
 
-\begin{lstlisting}
+\begin{figure}[h]
+    \begin{lstlisting}[language=racket]
 (define (consistent? T1 T2)
   (match `(,T1 ,T2)
     [`(,T1 dynamic) #t]
     [`(dynamic ,T2) #t]
-    [`(,(arrow T1-dom T1-cod) ,(arrow T2-dom T2-cod))
+    [`(,(arrow T1-dom T1-cod)
+       ,(arrow T2-dom T2-cod))
      (and (consistent-list? T1-dom T2-dom)
           (consistent-list? T1-cod T2-cod))]
     [else (equal? T1 T2)]))
-\end{lstlisting}
+    \end{lstlisting}
+    \caption[]{Helper function to check type consistency}
+    \label{fig:consistent}
+\end{figure}
 
 \subsection{Typing rules}
 Figure * is the typing rules that we follow in the proof-of-concept stage. It extends the type system of the gradually-typed lambda calculus (GTLC) [Siek and Taha 2006]. The typing rules described in Figure * can be read “if the propositions above the line are true, then the proposition below the line will be true”, and the type judgements “ |-e:T” can be read “e has type T in the context ”. The metafunction fun extracts function information from a type (i.e., the ? type can be viewed as a function type ? -> ?).
 
 The main extension of our type system to the GTLC type system is the addition of statements because Octave is an imperative language. Statements include assignments and if-statements and do not have types. We represent typing rules for assignments and for if-statements in Figure 1. An assignment type-checks if the type of the left-hand side variable and the type of the right-hand side expression are consistent. An if-statement type-checks if the condition expression has type bool.
 
+\begin{figure}[h]
+    \begin{mathpar}
+        \infer{\tc{\Gamma}{e_1}{T_1} \quad \tc{\Gamma}{e_2}{T_2} \\ fun(T_1) = T_{11} \rightarrow T_{12} \quad T_2 \sim T_{11}}{\tc{\Gamma}{\texttt{$e_1$($e_2$)}}{T_{12}}} \\
+        \infer{\tc{\Gamma}{e_1}{\texttt{int}} \quad \tc{\Gamma}{e_2}{\texttt{int}}}{\tc{\Gamma}{\texttt{$e_1$ + $e_2$}}{\texttt{int}}} \\
+        \ldots \\
+        \begin{array}{rcl}
+            fun(T_1 \to T_2) &=& T_1 \to T_2 \\
+            fun(\texttt{?}) &=& \texttt{?} \to \texttt{?}
+        \end{array}
+    \end{mathpar}
+    \caption{Expression typing rules}
+    \label{fig:expr-typing}
+\end{figure}
 
-
-
-
-
-Expression Typing:  |-e:T
- |- e1: T1  |- e1: T1
-fun(T1) = T11T12  T2T11 |- (e1e2) : T12
-fun(T1 T2) = T1 T2
-fun(?) = ? ?
- |- e1: int   |- e2:int |- e1 + e2: int
-
-...
-
-Statement Typing:
-
- |-x : T!  x: T2 T1T2 x := e
-
- |- e1: boolif e1then e2 else e3 endif
+\begin{figure}[h]
+    \begin{mathpar}
+        \infer{\tc{\Gamma}{x}{T_1} \quad \tc{\Gamma}{e}{T_2} \quad T_1 \sim T_2}{\texttt{$x$ := $e$}} \\
+        \infer{\tc{\Gamma}{e}{\texttt{bool}}}{\texttt{if $e$ then $s_1$ else $s_2$ endif}} \\
+    \end{mathpar}
+    \caption{Statement typing rules}
+    \label{fig:stmt-typing}
+\end{figure}
 
 \subsubsection{AST}
-Statements will be defined as all of the statements we want to support in type checking such as expressions, declarations, assignments, functions, and if statements. The AST will look like:
+Statements will be defined as all of the statements we want to support in type checking such as expressions, declarations, assignments, functions, and if statements. The AST will look similar to Figure \ref{fig:ast-stmt}.
+
+\begin{figure}[h]
+    \begin{lstlisting}[language=racket]
 (define-type Stmt
   (U Expr decl assn func if-stmt))
+    \end{lstlisting}
+    \caption[]{AST node for statements}
+    \label{fig:ast-stmt}
+\end{figure}
 
 We will dig deeper into a few  as either an id, constants, application, binop functions, or compop functions. Since this AST will be used for type checking, it can be useful to break up the binop functions to specific functions relating to the type they handle. For example, we separate binop into int-binop and bool-binop where the name tells us which type it supports. We also break up comparisons into int-compop and string-compop to be more specific about the types. This is what the AST for Expr will lookof the statement nodes in this tutorial to understand how to represent them. We will start with the Expr node as it is one where many nodes in the AST will link back to.
 
-We will define an expression like:
+We will define an expression like in Figure \ref{fig:ast-expr}.
 
-(define-type Expr
-  (U id Constant app int-binop bool-binop int-compop string-compop))
+\begin{figure}[h]
+    \begin{lstlisting}[language=racket]
+(define-type expr
+  (u id constant app int-binop bool-binop
+     int-compop string-compop))
+    \end{lstlisting}
+    \caption[]{AST nodes for expressions}
+    \label{fig:ast-expr}
+\end{figure}
 
-Let’s take a look at how int-compop is represented to have an idea of how the other nodes of Expr will be represented.
+Let's take a look at how int-compop is represented in Figure \ref{fig:ast-compop} to have an idea of how the other nodes of Expr will be represented.
 
+\begin{figure}[h]
+    \begin{lstlisting}[language=racket]
 (struct int-compop
   ([op  : (-> Integer Integer Boolean)]
    [lhs : Expr]
    [rhs : Expr]))
+    \end{lstlisting}
+    \caption[]{AST node for {\tt int-compop}}
+    \label{fig:ast-compop}
+\end{figure}
 
 For int-compop, we have a function that takes in two expressions that needs to be evaluated into integers and returns a boolean that represents whether or not the two integers are equal. Since we know what types this compop function needs to handle, we can introduce it as (-> Integer Integer Boolean) where the last type in the -> notation is the output and the rest are inputs. Given this function, we now need to be able to represent the two integers passed in. They can be represented as expressions that have to evaluate to an integer in order to be consistent. This is beneficial because once we have a type checker for Expr, we can recursively use that type checker on all the other AST nodes that use Expr. 
 
 Another important AST node under the statement node is the function node. In Octave, we need to pass in the input and output parameters to a function. With type checking, that means both the input and output parameters can be type annotated. To represent that, we have a (Pair Symbol Type) where Symbol is the parameter name and Type is the type of the parameter. Since functions can take multiple parameters, we will represent the arguments as a (Listof (Pair Symbol Type)). The body of the function may also need to be type checked. We can achieve that by creating a (Listof Stmt) node to represent the body. This way, we can recursively call the type checker for statement to verify the body of a function.
 
+\begin{figure}[h]
+    \begin{lstlisting}[language=racket]
 (struct func
   ([name : Symbol]
    [args : (Listof (Pair Symbol Type))]
    [rets : (Listof (Pair Symbol Type))]
    [body : (Listof Stmt)]))
+    \end{lstlisting}
+    \caption[]{AST node for {\tt func}}
+    \label{fig:func}
+\end{figure}
 
 Lastly, we need to define what a Type node is. This node specifies the types we will handle type checking for. This includes integers, boolean, string, dynamic, none, arrow, and star which are the types we explained earlier in the type consistency section. 
 
-Here is an example of how the AST node for Type can be represented:
+Figure \ref{fig:type} includes an example of how the AST node for Type can be represented.
+
+\begin{figure}[h]
+    \begin{lstlisting}[language=racket]
 (define-type Type
-  (U 'int 'bool 'string 'dynamic 'none arrow (Listof Type))).
+  (U 'int 'bool 'string 'dynamic 'none arrow
+     (Listof Type)))
+    \end{lstlisting}
+    \caption[]{AST nodes for types}
+    \label{fig:type}
+\end{figure}
 
 Now that we have an idea of how to represent Octave programs as an AST, we can use pass this AST into our type checker to check for type consistency. 
 
@@ -241,71 +406,106 @@ Note that the type of an expression will be used to type-check the super-express
 
 In contrast, non-expression statements cannot be further operated on and therefore do not have types (denoted by the none type in the AST). However, it is worth noting that two statements, namely declarations and function definitions, will update the type environment. Specifically, a variable declaration will bind a new variable to a type in the environments. Function definitions are slightly more complicated. A function definition is a special declaration where the type-checker first type-checks the body of the function with the environment temporarily augmented with arguments and then bind the function name to its type in the environment. Therefore, the type-checker for statements returns the possibly updated type environment.
 
-We will look at one of the more interesting cases such as type checking an assignment. 
-[(assn names expr)
-     (local [(define expect-types
-               ((inst map Type Symbol)
-                (lambda (name)
-                  (local [(define result (assoc name env))]
-                    (if (false? result)
-                        (error 'typecheck-stmt "Unbound identifier")
-                        (cdr result))))
-                names))
-             (define expect-length (length expect-types))
-             (define actual-types
-               (local [(define original (typecheck-expr env expr))
-                       (define listify (if (list? original)
-                                           original
-                                           (list original)))
-                       ]
-                 (if (> (length listify) expect-length)
-                     (take listify expect-length)
-                     listify)))
-             (define actual-length (length actual-types))]
-       (cond
-         [(not (= expect-length actual-length))
-          (error 'typecheck-stmt "Assignment arity mismatch")]
-         [(consistent-list? expect-types actual-types) env]
-         [else (error 'typecheck-stmt "Assignment type mismatch")]))]
+We will look at one of the more interesting cases such as type checking an assignment.
 
-With an assignment, we first need to determine the types of the left hand side of the assignment. To do that, we recall that we have an environment that holds all the types of the variables seen so far. We create our list of expected types by searching in the environment and throwing an error if any of the variables can not be found. If an error occurs, that would mean this assignment was invalid since we have never declared this variable before. Once we have the list of expected types, we need to get the actual types. Since the right hand side of the assignment is an expression, we can call our helper for typecheck-expr which either returns one type or a list of types. We will get a list of types in the case where the right hand side of the assignment was a function application where the function can return multiple values. Octave allows the left side of an assignment to have less variables than the number of values on the right side of the assignment if it was a function application. In such a case, Octave will ignore the last n output values where n = (left length - right length). We model this in our type checker by comparing the length of both sides of the assignment and removing the unnecessary output types from the function application if the length on the right is greater than the length on the left. After this, we also need to make sure the left side of the assignment does not have more variables than the right side of the assignment. For example, we can’t have x,y = 1. In this case, we will throw an error. If all of the length checks pass, we can simply call our consistent function on the list of types which will check for type consistency between the left side and the right side of the assignment.  
+\begin{figure}[h]
+    \begin{lstlisting}[language=racket]
+[(assn names expr)
+ (local
+    [(define expect-types
+       ((inst map Type Symbol)
+        (lambda (name)
+          (local [(define result (assoc name env))]
+            (if (false? result)
+                (error 'typecheck-stmt
+                       "Unbound identifier")
+                (cdr result))))
+        names))
+     (define expect-length (length expect-types))
+     (define actual-types
+       (local
+         [(define original
+            (typecheck-expr env expr))
+          (define listify
+            (if (list? original)
+                original
+                (list original)))]
+         (if (> (length listify) expect-length)
+             (take listify expect-length)
+             listify)))
+     (define actual-length (length actual-types))]
+   (cond
+     [(not (= expect-length actual-length))
+      (error 'typecheck-stmt
+             "Assignment arity mismatch")]
+     [(consistent-list? expect-types actual-types)
+      env]
+     [else
+      (error 'typecheck-stmt
+             "Assignment type mismatch")]))]
+    \end{lstlisting}
+    \caption[]{Type-checker branch for assignments}
+    \label{fig:assn}
+\end{figure}
+
+With an assignment, we first need to determine the types of the left hand side of the assignment. To do that, we recall that we have an environment that holds all the types of the variables seen so far. We create our list of expected types by searching in the environment and throwing an error if any of the variables can not be found. If an error occurs, that would mean this assignment was invalid since we have never declared this variable before. Once we have the list of expected types, we need to get the actual types. Since the right hand side of the assignment is an expression, we can call our helper for typecheck-expr which either returns one type or a list of types. We will get a list of types in the case where the right hand side of the assignment was a function application where the function can return multiple values. Octave allows the left side of an assignment to have less variables than the number of values on the right side of the assignment if it was a function application. In such a case, Octave will ignore the last n output values where n = (left length - right length). We model this in our type checker by comparing the length of both sides of the assignment and removing the unnecessary output types from the function application if the length on the right is greater than the length on the left. After this, we also need to make sure the left side of the assignment does not have more variables than the right side of the assignment. For example, we can't have x,y = 1. In this case, we will throw an error. If all of the length checks pass, we can simply call our consistent function on the list of types which will check for type consistency between the left side and the right side of the assignment.  
 
 Another interesting case is the case for function application.
-    [(app fun args)
-     (local [(define fun-type (typecheck-expr env fun))]
-       (if (or (arrow? fun-type) (equal? fun-type 'dynamic))
-           (local [(define expect-types (fun-dom fun-type))
-                   (define actual-types (typecheck-list env args))
-                   (define expect-length (length expect-types))
-                   (define actual-length (length actual-types))
-                   (define adjusted-actual
-                     (cond
-                       [(> actual-length expect-length)
-                        (take actual-types expect-length)]
-                       [(< actual-length expect-length)
-                        (append actual-types
-                                (build-list (- expect-length actual-length)
-                                            (lambda (x) 'dynamic)))]
-                       [else actual-types]))
-                   (define return-types (fun-cod fun-type))]
-             (if (consistent-list? expect-types adjusted-actual)
-                 return-types
-                 (error 'typecheck-expr "Function application argument type mismatch")))
-           (error 'typecheck-expr "Try to apply a non-function")))]))
+
+\begin{figure}[h]
+    \begin{lstlisting}[language=racket]
+[(app fun args)
+ (local [(define fun-type (typecheck-expr env fun))]
+   (if (or (arrow? fun-type)
+           (equal? fun-type 'dynamic))
+       (local
+         [(define expect-types
+            (fun-dom fun-type))
+          (define actual-types
+            (typecheck-list env args))
+          (define expect-length
+            (length expect-types))
+          (define actual-length
+            (length actual-types))
+          (define adjusted-actual
+            (cond
+              [(> actual-length expect-length)
+               (take actual-types expect-length)]
+              [(< actual-length expect-length)
+               (append
+                actual-types
+                (build-list (- expect-length
+                               actual-length)
+                            (lambda (x)
+                              'dynamic)))]
+              [else actual-types]))
+           (define return-types
+           (fun-cod fun-type))]
+         (if (consistent-list? expect-types
+                               adjusted-actual)
+             return-types
+             (error 'typecheck-expr
+                    "Argument type mismatch")))
+       (error 'typecheck-expr
+              "Try to apply a non-function")))]))
 
 (: fun-dom (-> Type (Listof Type)))
 (define (fun-dom fun-type)
   (cond
     [(arrow? fun-type) (arrow-dom fun-type)]
     [(equal? fun-type 'dynamic) '(dynamic)]
-    [else (error 'fun-dom "Try to get the domain of a non-function")]))
+    [else (error 'fun-dom "...")]))
 
 (: fun-cod (-> Type (Listof Type)))
 (define (fun-cod fun-type)
   (cond
     [(arrow? fun-type) (arrow-cod fun-type)]
     [(equal? fun-type 'dynamic) '(dynamic)]
-    [else (error 'fun-cod "Try to get the co-domain of a non-function")]))
+    [else (error 'fun-cod "...")]))
+    \end{lstlisting}
+    \caption[]{Type-checking case for function applications}
+    \label{fig:app}
+\end{figure}
 
 Function application is an interesting case that is worth studying. Unlike some other languages, Octave allows the number of actual arguments of a functional to be different from the number of arguments declared in the argument list, and it allows functions to return multiple return values. Therefore, to type-check a function application, we need to truncate the actual argument list if necessary, and append dummy dynamic types to type-check missing arguments. We check the type consistency between the actual argument list and the expected argument list using the type consistency rule for star types.
 
@@ -315,15 +515,14 @@ The rest of the the type check cases are very similar and simpler than the two c
 
 
 \section{Plan for Next Steps}
-We intend to enrich and further introduce nuances into our gradual typing scheme by delving into features such as static dimension checking (as matrices are a core component of the language domain) and other more domain-specific aspects. More specifically, in order to meet our team’s full project goals we plan on introducing matrices, as well as removing type annotations (i.e. translate back to normal octave).
+We intend to enrich and further introduce nuances into our gradual typing scheme by delving into features such as static dimension checking (as matrices are a core component of the language domain) and other more domain-specific aspects. More specifically, in order to meet our team's full project goals we plan on introducing matrices, as well as removing type annotations (i.e. translate back to normal octave).
 
-Our Octave can include matrices to do mathematical calculations such as element operations, vector operations, and other ways to manipulate matrices. This will not be trivial because it’s multidimensional, there can be dynamic types as well as static types.
-TODO… add more
+Our Octave can include matrices to do mathematical calculations such as element operations, vector operations, and other ways to manipulate matrices. This will not be trivial because it's multidimensional, there can be dynamic types as well as static types.
 
 We hope to create a meaningful and useful tool for Octave developers to use and ideally contribute towards in the future.
 
 \section{Concluding Remarks}
-Octave is an ideal candidate language as it is a well-known and relevant language, it benefits from the process of gradual typing and has many reference resources. In this proof of concept we provided an overview of the the stages of work we’ve implemented for the pre-processing as well as type-checking stages. For each each stage, we elaborate on the respective tools used and steps taken to achieve certain inputs and outputs. We’ve also included snippets of the source code to reinforce users’ understanding of how to recreate the proof-of-concept without serious difficulties in a tutorial-like format.
+Octave is an ideal candidate language as it is a well-known and relevant language, it benefits from the process of gradual typing and has many reference resources. In this proof of concept we provided an overview of the the stages of work we've implemented for the pre-processing as well as type-checking stages. For each each stage, we elaborate on the respective tools used and steps taken to achieve certain inputs and outputs. We've also included snippets of the source code to reinforce users' understanding of how to recreate the proof-of-concept without serious difficulties in a tutorial-like format.
 
 The objective for this project is to develop a gradually-typed variant for Octave that sufficiently expresses the basic data types of the language. We believe that the flexible nature of gradual typing offers great value to data scientists and various users of Octave in that it remains an effective prototyping tool while optionally providing compile-time type and invariant assertions. To achieve this, we intend to base our initial prototypes for static semantics on the existing literature described above.
 
