@@ -23,10 +23,11 @@ function [x, y, z] = circle3d(center, normal, radius)
   endif
   p = p ./ norm(p);
   q = cross (normal, p);
-  t = (0:pi/16:2*pi)(:);
+  ## t = (0:pi/16:2*pi)(:);
   ret = repmat(center, size(t)) + radius * cos(t) * p + radius * sin(t) * q;
   x = ret(:, 1);
   y = ret(:, 2);
   z = ret(:, 3);
 endfunction
 
+[X, Y, Z] = circle3d([0 0 0], [1 0 0], 1);
