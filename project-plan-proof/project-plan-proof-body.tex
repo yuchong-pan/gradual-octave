@@ -86,7 +86,7 @@ Additionally, previous projects such as \citet{chauhan2003type} and \citet{olmos
 
 In fact, there are also performance benefits to adopting a gradual typing approach, in addition to the previous telescoping and program specialization techniques employed above. We again cite that recent development of gradually-typed compilers have been successful in attaining performance on par with statically-typed compilers \cite{kuhlenschmidt2018efficient}. As a result, the Octave variant that we propose will for additional optimizations in the compile phase and therefore have at least equal or better performance to existing compilers in general depending on the proportion of statically-typed code.
 
-\section{Proof of Concept}
+\section{Proof-of-Concept}
 For the full proof-of-concept, see the project repository at \url{https://github.com/yuchong-pan/cpsc-311-project}. Below, we provide a tutorial for building the pipeline used to type-check our proposed gradually-typed Octave source files. To demonstrate the entire process of conversion from source code to a check result, we will refer to the test file [examples/tutorial.rkt](link to file) and show various stages of output as it is processed through our application.
 
 \subsection{Pre-processing}
@@ -175,7 +175,6 @@ Now that we have a structure that can be easily traversed by Racket, we are read
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
-;; Intermediate Typed Octave Construct
 (define-type I-TOC
   [i-null]
   [i-id-type (name symbol?) (type Type?)]
@@ -251,12 +250,13 @@ Finally, we must desugar the intermediate syntax into the final abstract syntax.
 
 At this point, the original source file has been transformed into our desired form and we can perform type-checking on it. In the section to follow, we will elaborate on the form and use of our abstract syntax.
 
-\subsection{Type-checking}
+\subsection{Type-Checking}
 
-\subsubsection{Type consistency}
-One can view dynamic typing as a type system with only one type. Thus, the main difference of a gradual type system from a static type system is the additional unknown type, denoted by ?, which is used to indicate a partially-known structure of a type [Siek and Taha 2006]. For instance, int -> ? represents a function type whose domain is int and whose codomain can be any type.
+\subsubsection{Type Consistency}
+\label{sec:consistency}
+One can view dynamic typing as a type system with only one type {\tt dynamic}. Thus, the main difference of a gradual type system from a static type system is the additional unknown type, denoted by {\tt ?}, which is used to indicate a partially-known structure of a type \cite{siek2006gradual}. For instance, {\tt int $\to$ ?} represents a function type whose domain is {\tt int} and whose co-domain can be any type.
 
-In order to support the unknown type, the type equality relation is no longer working in a gradual type system. Consider a function f with type int -> int, and a variable x with type ?. A dynamic system should allow f to be applied on x, and cast x from type ? to type int in the runtime, whereas type ? is not equal to type int. Hence, an important modification of a gradual type system is to replace the type equality relation with the type consistency relation [Siek and Taha 2006], which is defined as follows. Here, the arrow type (-> T T) is an explicit function type, and the star type T * T is a pair type.
+In order to support the unknown type, the type equality relation is no longer working in a gradual type system. Consider a function {\tt f} with type {\tt int $\to$ int}, and a variable {\tt x} with type {\tt ?}. A gradual type system should allow {\tt f} to be applied on {\tt x} by casting $x$ from type {\tt ?} to type {\tt int} in the runtime, whereas type {\tt ?} is not equal to type {\tt int}. Hence, an important difference of a gradual type system froma static type system is to replace the type equality relation with the type consistency relation \cite{siek2006gradual}, which is defined in Figure {fig:consistency}. Here, the arrow type {\tt ($\rightarrow$ T T)} is an explicit function type, and the star type {\tt T $\times$ T} is the type for pairs of two instances of difference types.
 
 \begin{figure}[h]
     \[\begin{array}{rcl}
@@ -279,7 +279,7 @@ In order to support the unknown type, the type equality relation is no longer wo
     \label{fig:consistency}
 \end{figure}
 
-The type consistency relation needs to respect several properties. First, type consistency should *conservatively* extend the type equality relation [Garcia et al.'s AGT paper]. Described as a criterion for gradual typing, a gradual type system should behave exactly the same for fully statically-typed programs [Siek et al. 2015]. Hence, two basic types T1 and T2 are consistent if and only if they are equal. Second, it is easy to see that type consistency should be reflexive, symmetric, but not transitive. To see the non-transitivity, if consistency were transitive, then int ~ ? and ? ~ bool would imply that int ~ bool, which would violate the criterion for gradual typing stated above. In our type-checker, we implemented the following helper function to check type consistency of two types.
+The type consistency relation needs to respect several properties. First, type consistency should \emph{conservatively} extend the type equality relation \cite{garcia2016abstracting}. Described as a criterion for gradual typing, a gradual type system should behave exactly the same as a static type system for fully statically-typed programs \cite{siek2015refined}. Hence, two basic types $T_1$ and $T_2$ are consistent if and only if they are equal. Second, it is easy to see that type consistency should be reflexive, symmetric, but not transitive. To see the non-transitivity, if consistency were transitive, then {\tt int $\sim$ ?} and {\tt ? $\sim$ bool} would imply that {\tt int $\sim$ bool}, which would violate the criterion for gradual typing stated above. In our type-checker, we implemented the helper function {\tt consistent?} to check type consistency of two types, given in Figure \ref{fig:consistent}.
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -297,10 +297,10 @@ The type consistency relation needs to respect several properties. First, type c
     \label{fig:consistent}
 \end{figure}
 
-\subsection{Typing rules}
-Figure * is the typing rules that we follow in the proof-of-concept stage. It extends the type system of the gradually-typed lambda calculus (GTLC) [Siek and Taha 2006]. The typing rules described in Figure * can be read “if the propositions above the line are true, then the proposition below the line will be true”, and the type judgements “ |-e:T” can be read “e has type T in the context ”. The metafunction fun extracts function information from a type (i.e., the ? type can be viewed as a function type ? -> ?).
+\subsubsection{Typing Rules}
+Figure \ref{fig:types} is the typing rules that we follow in the proof-of-concept stage. It extends the type system of the gradually-typed lambda calculus (GTLC) \cite{siek2006gradual}. The typing rules described in Figure \ref{fig:types} can be read as ``if the propositions above the bar are true, then the proposition below the bar will be true'', and the type judgements ``$\tc{\Gamma}{e}{T}$'' can be read as ``expression $e$ has type $T$ in the context $\Gamma$''. The metafunction $fun$ extracts the domain and co-domain from a possible function type (i.e., the {\tt ?} type can be viewed as a function type {\tt ? $\to$ ?}).
 
-The main extension of our type system to the GTLC type system is the addition of statements because Octave is an imperative language. Statements include assignments and if-statements and do not have types. We represent typing rules for assignments and for if-statements in Figure 1. An assignment type-checks if the type of the left-hand side variable and the type of the right-hand side expression are consistent. An if-statement type-checks if the condition expression has type bool.
+The main extension of our type system to the GTLC type system is the addition of statements because Octave is an imperative language. Statements include assignments and if-statements and do not have types. We represent typing rules for assignments and for if-statements in Figure \ref{fig:stmt-typing}. An assignment type-checks if the type of the left-hand side variable and the type of the right-hand side expression are consistent. An if-statement type-checks if the condition expression has the {\tt bool} type.
 
 \begin{figure}[h]
     \begin{mathpar}
@@ -325,8 +325,8 @@ The main extension of our type system to the GTLC type system is the addition of
     \label{fig:stmt-typing}
 \end{figure}
 
-\subsubsection{AST}
-Statements will be defined as all of the statements we want to support in type checking such as expressions, declarations, assignments, functions, and if statements. The AST will look similar to Figure \ref{fig:ast-stmt}.
+\subsubsection{Abstract Syntax Tree (AST)}
+In our abstract syntax tree (AST), statements will be defined as all of the statements we want to support in type checking, such as expressions, declarations, assignments, function definitions, and if-statements. Note that expressions are always associated with types, whereas statements that are not expressions do not have types. The AST will look similar to Figure \ref{fig:ast-stmt}.
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -337,9 +337,7 @@ Statements will be defined as all of the statements we want to support in type c
     \label{fig:ast-stmt}
 \end{figure}
 
-We will dig deeper into a few  as either an id, constants, application, binop functions, or compop functions. Since this AST will be used for type checking, it can be useful to break up the binop functions to specific functions relating to the type they handle. For example, we separate binop into int-binop and bool-binop where the name tells us which type it supports. We also break up comparisons into int-compop and string-compop to be more specific about the types. This is what the AST for Expr will lookof the statement nodes in this tutorial to understand how to represent them. We will start with the Expr node as it is one where many nodes in the AST will link back to.
-
-We will define an expression like in Figure \ref{fig:ast-expr}.
+We will dig deeper into a few expressions as either identifiers, constants, application, binary operations, or comparison operations. An expression is one of an identifier, a constant, a function application, a binary operation or a comparison operation, as illustrated in Figure \ref{fig:ast-expr}.
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -351,7 +349,7 @@ We will define an expression like in Figure \ref{fig:ast-expr}.
     \label{fig:ast-expr}
 \end{figure}
 
-Let's take a look at how int-compop is represented in Figure \ref{fig:ast-compop} to have an idea of how the other nodes of Expr will be represented.
+Let's take a look at how {\tt int-compop} is represented to have an idea of how the other types of expressions will be represented. For {\tt int-compop}, we have a Racket function that represents the comparison operation, such as {\tt =}, {\tt <}, or even a lambda function {\tt (lambda (x y) (not (= x y)))}. Since we know what types this compop function needs to handle, we can introduce it as {\tt (-> Integer Integer Boolean)} where the last type {\tt Boolean} is the output and the rest are inputs. Given this function, the remaining is to store the two operatands, which can be represented as arbitrary expressions. The structure for {\tt int-compop} is depicted in Figure \ref{fig:ast-compop}.
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -364,9 +362,7 @@ Let's take a look at how int-compop is represented in Figure \ref{fig:ast-compop
     \label{fig:ast-compop}
 \end{figure}
 
-For int-compop, we have a function that takes in two expressions that needs to be evaluated into integers and returns a boolean that represents whether or not the two integers are equal. Since we know what types this compop function needs to handle, we can introduce it as (-> Integer Integer Boolean) where the last type in the -> notation is the output and the rest are inputs. Given this function, we now need to be able to represent the two integers passed in. They can be represented as expressions that have to evaluate to an integer in order to be consistent. This is beneficial because once we have a type checker for Expr, we can recursively use that type checker on all the other AST nodes that use Expr. 
-
-Another important AST node under the statement node is the function node. In Octave, we need to pass in the input and output parameters to a function. With type checking, that means both the input and output parameters can be type annotated. To represent that, we have a (Pair Symbol Type) where Symbol is the parameter name and Type is the type of the parameter. Since functions can take multiple parameters, we will represent the arguments as a (Listof (Pair Symbol Type)). The body of the function may also need to be type checked. We can achieve that by creating a (Listof Stmt) node to represent the body. This way, we can recursively call the type checker for statement to verify the body of a function.
+Another important AST node is the function definitions. Unlike many other programming languages, Octave requires us to specify both the identifiers for arguments and those for return variables. Therefore, in our proposed gradual typing extension to Octave, that means both the input and output parameters can be type annotated. To represent that, we use a pair of a symbol and a {\tt Type} type to represent each argument and each return variable and store them in two lists. The body of the function may also need to be type checked. We can achieve that by creating a list of statements to represent the body. This way, we can recursively call the type checker for statement to type-check the body of a function.
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -380,9 +376,7 @@ Another important AST node under the statement node is the function node. In Oct
     \label{fig:func}
 \end{figure}
 
-Lastly, we need to define what a Type node is. This node specifies the types we will handle type checking for. This includes integers, boolean, string, dynamic, none, arrow, and star which are the types we explained earlier in the type consistency section. 
-
-Figure \ref{fig:type} includes an example of how the AST node for Type can be represented.
+Lastly, we need to define what a {\tt Type} node is. This type of node specifies the types we will handle type checking for. This includes integers, Boolean, strings, dynamic, none (for functions with no return values), arrow, and star which are the types we explained earlier in Section \ref{sec:consistency}. Figure \ref{fig:type} includes an example of how the AST node for Type can be represented.
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -396,17 +390,16 @@ Figure \ref{fig:type} includes an example of how the AST node for Type can be re
 
 Now that we have an idea of how to represent Octave programs as an AST, we can use pass this AST into our type checker to check for type consistency. 
 
-\subsubsection{Type checker tutorial}
-When we declare a variable or declare a function, we allow the user to specify what the type of the variables are. However, we need to be able to retrieve this information when we use assignment and application.In order to keep track of what the types of the variables are, we will introduce an environment that stores this data. An environment can be represented as (define-type Env (Listof (Pair Symbol Type))). Everytime we encounter a declaration or a function definition, we can append a (Pair Symbol Type) to the environment. 
-Symbol in the Pair represents the name of the variable and Type represents the type of the variable. Now, we can thread the environment through our program so it can be accessed by application and assignment. When we get to type checking an application or an assignment, we can look up the variable name in the environment to retrieve its type. With this environment passed around, we can complete the type checker. 
+\subsubsection{Type-Checker Implementation Details}
+{\bf Type Environments.} When a variable or a function is declared, we allow users to specify the type of the variable or the function. However, we need to be able to retrieve this information when we type-check statements and expressions. In order to keep track of what the types of the variables are, we introduce an environment that stores this data. An environment can be represented as {\tt (define-type Env (Listof (Pair Symbol Type)))}. Everytime we encounter a declaration or a function definition, we can append a pair of an identifier and its corresponding type to the environment. Now, we can thread the environment through our program so it can be accessed by statements and expressions. When we get to type-checking a statement or an expression, we can look up the variable name in the environment to retrieve its type. With this environment passed around, we can complete the type checker. 
 
-As we explained earlier, our main AST nodes are statements and expressions. Our typechecker will be broken down into a typechecker for statements and a typechecker for expressions.
+{\bf Statements and Expressions.} Our type-checker is broken down into two helper functions to type-check statements and expressions, respectively. Note that the type of an expression will be used to type-check the super-expression that contains it. For instance, to typecheck the expression {\tt $e1$ + $e2$}, we need to ensure that $e1$ and $e2$ both have type {\tt int}. Therefore, the type-checker needs to type-check each sub-expression and returns the type information of the expression.
 
-Note that the type of an expression will be used to type-check the super-expression that contains it. For instance, to typecheck the expression e1 + e2, we need to ensure that e1 and e2 both have type int (or both matrices, for the final project). Therefore, the type-checker for expressions type-checks each sub-expression, performs additional checks and finally returns the type information of the expression.
+In contrast, non-expression statements cannot be further operated on and therefore do not have types. However, it is worth noting that two types of statements, namely declarations and function definitions, will update the type environment; i.e., they will bind new identifiers to their corresponding types in the environment. Therefore, the type-checker for statements returns the possibly updated type environment.
 
-In contrast, non-expression statements cannot be further operated on and therefore do not have types (denoted by the none type in the AST). However, it is worth noting that two statements, namely declarations and function definitions, will update the type environment. Specifically, a variable declaration will bind a new variable to a type in the environments. Function definitions are slightly more complicated. A function definition is a special declaration where the type-checker first type-checks the body of the function with the environment temporarily augmented with arguments and then bind the function name to its type in the environment. Therefore, the type-checker for statements returns the possibly updated type environment.
+{\bf Case Study: Assignments.} We will look at one of the more interesting cases such as type checking an assignment, because Octave allows multiple variables at the left-hand side of an assignment. The type-checker implementation for assignments is given in Figure \ref{fig:assn}. With an assignment, we first need to determine the types of the left-hand side variables. To do that, we create a list of expected types by searching in the environment and throwing an error if any of the variables are not found. If an error occurs, that would mean this assignment was invalid since we have never declared this variable before. Then, we need to get the actual types. Since the right-hand side of an assignment is an expression, we can call our helper function {\tt typecheck-expr} to type-check the right-hand side.
 
-We will look at one of the more interesting cases such as type checking an assignment.
+Note that Octave allows the left-hand side of an assignment to have less variables than the number of values on the right side of the assignment, in which case Octave ignores the last several output values that are missing on the left-hand side. We model this in our type checker by comparing the length of both sides of the assignment and removing the unnecessary output types from the function application if the length on the right is greater than the length on the left. After this, we also need to make sure the left-hand side of the assignment does not have more variables than the right side of the assignment. For example, we can't have {\tt x, y = 1}. In this case, we will throw an error. If all of the length checks pass, we can simply call our consistent function on the list of types which will check for type consistency between the left-hand side and the right-hand side of the assignment.  
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -444,13 +437,14 @@ We will look at one of the more interesting cases such as type checking an assig
       (error 'typecheck-stmt
              "Assignment type mismatch")]))]
     \end{lstlisting}
-    \caption[]{Type-checker branch for assignments}
+    \caption[]{Type-checking case for assignments}
     \label{fig:assn}
 \end{figure}
 
-With an assignment, we first need to determine the types of the left hand side of the assignment. To do that, we recall that we have an environment that holds all the types of the variables seen so far. We create our list of expected types by searching in the environment and throwing an error if any of the variables can not be found. If an error occurs, that would mean this assignment was invalid since we have never declared this variable before. Once we have the list of expected types, we need to get the actual types. Since the right hand side of the assignment is an expression, we can call our helper for typecheck-expr which either returns one type or a list of types. We will get a list of types in the case where the right hand side of the assignment was a function application where the function can return multiple values. Octave allows the left side of an assignment to have less variables than the number of values on the right side of the assignment if it was a function application. In such a case, Octave will ignore the last n output values where n = (left length - right length). We model this in our type checker by comparing the length of both sides of the assignment and removing the unnecessary output types from the function application if the length on the right is greater than the length on the left. After this, we also need to make sure the left side of the assignment does not have more variables than the right side of the assignment. For example, we can't have x,y = 1. In this case, we will throw an error. If all of the length checks pass, we can simply call our consistent function on the list of types which will check for type consistency between the left side and the right side of the assignment.  
 
-Another interesting case is the case for function application.
+{\bf Case Study: Function Applications.} Function applications are another interesting case that is worth studying. The type-checker implementation for assignments is given in Figure \ref{fig:app}. Unlike some other languages, Octave allows the number of actual arguments of a functional to be different from the number of arguments declared in the argument list, and it allows functions to return multiple return values. Handling arguments of function applications is similar to handling assignments, as described above. Therefore, we need to truncate the actual argument list if necessary, and append dummy dynamic types to type-check missing arguments. Then, we check the type consistency between the actual argument list and the expected argument list using the type consistency rule for star types.
+
+It is also worth noting that we may apply a function with the {\tt ?} type because the {\tt ?} type can also represent a function type. This may happen when we apply a higher-order function passed in as an argument of another function, where the type annotation of the argument is {\tt dynamic}. To type-check this case, we need to extract the domain type and the co-domain type of the {\tt dynamic} type, which are both {\tt dynamic} according to the metafunction $fun$ is the type consistency rules in Figure \ref{fig:consistency}. Therefore, we implemented two helper functions, {\tt fun-dom} and {\tt fun-cod} to extract the domain and the co-domain of a possible function type.
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -507,12 +501,7 @@ Another interesting case is the case for function application.
     \label{fig:app}
 \end{figure}
 
-Function application is an interesting case that is worth studying. Unlike some other languages, Octave allows the number of actual arguments of a functional to be different from the number of arguments declared in the argument list, and it allows functions to return multiple return values. Therefore, to type-check a function application, we need to truncate the actual argument list if necessary, and append dummy dynamic types to type-check missing arguments. We check the type consistency between the actual argument list and the expected argument list using the type consistency rule for star types.
-
-Another interesting case is that we may apply a function with type dynamic because the dynamic type can also represent a function type. This may happen when we apply a higher-order function passed in as an argument of another function, where the type annotation of the argument is dynamic. To type-check this case, we need to extract the domain type and the co-domain type of a dynamic type, which are both dynamic according to the metafunction fun is the typing rules in Figure *. Therefore, we implemented two helper functions, fun-dom and fun-cod to extract the domain and the co-domain of a possible function type.
-
-The rest of the the type check cases are very similar and simpler than the two cases we described above. They can be implemented by calling the type checkers for statements and expressions as well as calling the consistency function to check the consistency of two types. 
-
+The rest of the type-checking cases are very similar and simpler than the two cases we described above. They can be implemented by calling the helper functions for statements and expressions as well as calling the consistency function to check the consistency of two types.
 
 \section{Plan for Next Steps}
 We intend to enrich and further introduce nuances into our gradual typing scheme by delving into features such as static dimension checking (as matrices are a core component of the language domain) and other more domain-specific aspects. More specifically, in order to meet our team's full project goals we plan on introducing matrices, as well as removing type annotations (i.e. translate back to normal octave).
