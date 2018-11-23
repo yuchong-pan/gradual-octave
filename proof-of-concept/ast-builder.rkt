@@ -2,6 +2,7 @@
 
 (require "ast.rkt")
 (require "parser.rkt")
+(require "typecheck.rkt")
 (require racket/pretty)
 
 (define (stx-atom? sexp)
@@ -44,15 +45,25 @@
 ;; Intermediate Typed Octave Construct
 (define-type I-TOC
   [i-null]
-  [i-id-type (name symbol?) (type Type?)]
-  [i-assn-decl (vars (listof i-id-type?)) (expr (or/c Expr? I-TOC?))]
-  [i-app (fun (or/c Expr? I-TOC?)) (args (listof (or/c Expr? I-TOC?)))]
-  [i-int-binop (op procedure?) (lhs (or/c Expr? I-TOC?)) (rhs (or/c Expr? I-TOC?))]
-  [i-bool-binop (op procedure?) (lhs (or/c Expr? I-TOC?)) (rhs (or/c Expr? I-TOC?))]
-  ;[i-int-compop (op procedure?) (lhs (or/c Expr? I-TOC?)) (rhs (or/c Expr? I-TOC?))] ; I just realized we can't actually determine these
-  ;[i-string-compop (op procedure?) (lhs (or/c Expr? I-TOC?)) (rhs (or/c Expr? I-TOC?))]
-  [i-func (name i-id-type?) (args (listof i-id-type?)) (rets (listof i-id-type?)) (body (listof (or/c Stmt? I-TOC?)))]
-  [i-if-stmt (cond (or/c Expr? I-TOC?)) (then (listof (or/c Stmt? I-TOC?))) (else (listof (or/c Stmt? I-TOC?)))])
+  [i-id-type (name symbol?)
+             (type Type?)]
+  [i-assn-decl (vars (listof i-id-type?))
+               (expr (or/c Expr? I-TOC?))]
+  [i-app (fun (or/c Expr? I-TOC?))
+         (args (listof (or/c Expr? I-TOC?)))]
+  [i-int-binop (op procedure?)
+               (lhs (or/c Expr? I-TOC?))
+               (rhs (or/c Expr? I-TOC?))]
+  [i-bool-binop (op procedure?)
+                (lhs (or/c Expr? I-TOC?))
+                (rhs (or/c Expr? I-TOC?))]
+  [i-func (name i-id-type?)
+          (args (listof i-id-type?))
+          (rets (listof i-id-type?))
+          (body (listof (or/c Stmt? I-TOC?)))]
+  [i-if-stmt (cond (or/c Expr? I-TOC?))
+             (then (listof (or/c Stmt? I-TOC?)))
+             (else (listof (or/c Stmt? I-TOC?)))])
 
 (define-type Env 
   [mtEnv]
