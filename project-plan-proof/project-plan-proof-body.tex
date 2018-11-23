@@ -87,15 +87,13 @@ Additionally, previous projects such as \citet{chauhan2003type} and \citet{olmos
 In fact, there are also performance benefits to adopting a gradual typing approach, in addition to the previous telescoping and program specialization techniques employed above. We again cite that recent development of gradually-typed compilers have been successful in attaining performance on par with statically-typed compilers \cite{kuhlenschmidt2018efficient}. As a result, the Octave variant that we propose will for additional optimizations in the compile phase and therefore have at least equal or better performance to existing compilers in general depending on the proportion of statically-typed code.
 
 \section{Proof-of-Concept}
-For the full proof-of-concept, see the project repository at \url{https://github.com/yuchong-pan/cpsc-311-project}. Below, we provide a tutorial for building the pipeline used to type-check our proposed gradually-typed Octave source files. To demonstrate the entire process of conversion from source code to a check result, we will refer to the test file [examples/tutorial.rkt](link to file) and show various stages of output as it is processed through our application.
+For the full proof-of-concept, see the project repository at \url{https://github.com/yuchong-pan/cpsc-311-project}. Below, we provide a tutorial for building the pipeline used to type-check our proposed gradually-typed Octave source files. To demonstrate the entire process of conversion from source code to a check result, we will show various stages of output as it is processed through our application.
 
 \subsection{Pre-processing}
 Before we begin static analysis of type information for a source file, we must convert it to our abstract representation. The three main stages of parsing include 1) tokenization 2) parsing to a Racket-friendly entity 3) parsing the entity to an intermediate representation 4) desugaring into our internal abstract syntax tree. As the first two steps are largely coupled, we address them together in a single section below.
 
 \subsubsection{Tokenization and Parsing}
-For this proof of concept, we decided to perform our own lexical analysis and parsing using modified [BNF](link to our language file) that defines a subset of Octave with type information. However, we note that future work could be done to extend the official Octave open source parser \cite{johneaton2018octaveparser} to handle this stage for completeness.
-
-Figure \ref{fig:bnf} includes examples of rules used in our BNF.
+For this proof of concept, we decided to perform our own lexical analysis and parsing using modified syntax that defines a subset of Octave with type information. However, we note that future work could be done to extend the official Octave open source parser \cite{johneaton2018octaveparser} to handle this stage for completeness. Figure \ref{fig:bnf} includes examples of rules used in our BNF.
 
 \begin{figure}[h]
     \begin{lstlisting}
@@ -130,7 +128,7 @@ primary_expression
     \label{fig:bnf}
 \end{figure}
 
-We begin this stage by performing both lexical analysis and parsing using tools from the [brag](http://docs.racket-lang.org/brag/) library. In the first step of pre-processing, we load Octave source code into memory as a string and perform lexical analysis using a lexer function. For this, we have defined tokens for each of the terminals defined in the language such as for identifiers, constants, as well as literal characters.
+We begin this stage by performing both lexical analysis and parsing using tools from the Racket brag library \cite{bragdocs}. In the first step of pre-processing, we load Octave source code into memory as a string and perform lexical analysis using a lexer function. For this, we have defined tokens for each of the terminals defined in the language such as for identifiers, constants, as well as literal characters.
 
 The result of passing the source code string to this method is a generator function that, when called, generates a token list such as the one pictured in Figure \ref{fig:token}.
 
@@ -147,7 +145,7 @@ The result of passing the source code string to this method is a generator funct
     \label{fig:token}
 \end{figure}
 
-Using the brag module, we obtain a parse function from the language file shown above which takes in a token list (or generator function) and ultimately constructs a [syntax object](https://docs.racket-lang.org/guide/stx-obj.html) which provides an easily traversable form for us to desugar. The syntax in Figure \ref{fig:syntax} form is an abstract representation of the input source file in terms of the defined BNF. 
+Using the brag module, we obtain a parse function from the language file shown above which takes in a token list (or generator function) and ultimately constructs a syntax object \cite{racketstxobj} which provides an easily traversable form for us to desugar. The syntax in Figure \ref{fig:syntax} form is an abstract representation of the input source file in terms of the defined BNF. 
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
@@ -199,7 +197,7 @@ Now that we have a structure that can be easily traversed by Racket, we are read
     \caption[]{abstract syntax representation of source code}
 \end{figure}
 
-To generate the abstract syntax tree, we use the [PLAI] (https://docs.racket-lang.org/plai/plai-scheme.html) language to match on the syntax structures produced by the previous step. To do this, we split each syntax object into a list using the syntax->list operation and this effectively allows us to parse 1) the current rule 2) the arguments for the rule.
+To generate the abstract syntax tree, we use the PLAI Scheme language \cite{plaischeme} to match on the syntax structures produced by the previous step. To do this, we split each syntax object into a list using the syntax->list operation and this effectively allows us to parse 1) the current rule 2) the arguments for the rule.
 
 We then extract the meaningful information captured within each rule, and produce a list of statement or function entities that describe the static form of the program. This includes any typing information that was declared within the source code. Figure \ref{fig:intermediate} is the example intermediate syntax obtained from this step.
 
