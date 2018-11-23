@@ -115,8 +115,8 @@
          (error 'typecheck-expr "Apply string comparison operation with non-string values"))]
     [(app fun args)
      (local [(define fun-type (typecheck-expr env fun))]
-       (if (arrow? fun-type)
-           (local [(define expect-types (arrow-dom fun-type))
+       (if (or (arrow? fun-type) (equal? fun-type 'dynamic))
+           (local [(define expect-types (fun-dom fun-type))
                    (define actual-types (typecheck-list env args))
                    (define expect-length (length expect-types))
                    (define actual-length (length actual-types))
@@ -129,7 +129,7 @@
                                 (build-list (- expect-length actual-length)
                                             (lambda (x) 'dynamic)))]
                        [else actual-types]))
-                   (define return-types (arrow-cod fun-type))]
+                   (define return-types (fun-cod fun-type))]
              (if (consistent-list? expect-types adjusted-actual)
                  return-types
                  (error 'typecheck-expr "Function application argument type mismatch")))
@@ -140,3 +140,17 @@
   ((inst map Type Expr)
    (lambda (e) (typecheck-expr env e))
    es))
+
+(: fun-dom (-> Type (Listof Type)))
+(define (fun-dom fun-type)
+  (cond
+    [(arrow? fun-type) (arrow-dom fun-type)]
+    [(equal? fun-type 'dynamic) '(dynamic)]
+    [else (error 'fun-dom "Try to get the domain of a non-function")]))
+
+(: fun-cod (-> Type (Listof Type)))
+(define (fun-cod fun-type)
+  (cond
+    [(arrow? fun-type) (arrow-cod fun-type)]
+    [(equal? fun-type 'dynamic) '(dynamic)]
+    [else (error 'fun-cod "Try to get the co-domain of a non-function")]))
