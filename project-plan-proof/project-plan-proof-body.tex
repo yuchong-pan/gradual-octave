@@ -50,7 +50,14 @@ Additionally, previous projects such as \citet{chauhan2003type} and \citet{olmos
 In fact, there are also performance benefits to adopting a gradual typing approach, in addition to the previous telescoping and program specialization techniques employed above. We again cite that recent development of gradually-typed compilers have been successful in attaining performance on par with statically-typed compilers \cite{kuhlenschmidt2018efficient}. As a result, the Octave variant that we propose will for additional optimizations in the compile phase and therefore have at least equal or better performance to existing compilers in general depending on the proportion of statically-typed code.
 
 \section{Proof-of-Concept}
-For the full proof-of-concept, see the project repository at \url{https://github.com/yuchong-pan/cpsc-311-project}. Below, we provide a tutorial for building the pipeline used to type-check our proposed gradually-typed Octave source files. To demonstrate the entire process of conversion from source code to a check result, we will show various stages of output as it is processed through our application.
+For the full proof-of-concept, see the project repository at \url{https://github.com/yuchong-pan/cpsc-311-project}. Below, we provide a tutorial for building the pipeline used to type-check our proposed gradually-typed Octave source files. To demonstrate the entire process of conversion from source code to a check result, we will show various stages of output as it is processed through our application. Figure \ref{fig:overview} illustrates an ovewview of the final structure of our proposed project.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.5\textwidth]{overview.jpg}
+    \caption{Overview of Our Proposed Project}
+    \label{fig:overview}
+\end{figure}
 
 \subsection{Pre-processing}
 Before we begin static analysis of type information for a source file, we must convert it to our abstract representation. The four main stages of parsing include 1) tokenization 2) parsing to a Racket syntax object 3) parsing the object to an intermediate syntax 4) desugaring into our final abstract syntax tree. As the first two steps are largely coupled, we address them together in a single section below.
