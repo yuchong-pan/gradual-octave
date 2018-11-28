@@ -12,7 +12,11 @@ translation_unit
 
 typed_identifier
         : IDENTIFIER
-        | IDENTIFIER ':' IDENTIFIER ; this second IDENTIFIER is the type, we reuse the pattern for simplicity
+        | IDENTIFIER ':' BASIC_TYPE ; this second IDENTIFIER is the type, we reuse the pattern for simplicity
+        | IDENTIFIER ':' LIST_TYPE '[' BASIC_TYPE ']'
+        | IDENTIFIER ':' LIST_TYPE '[' BASIC_TYPE ']' '[' CONSTANT ']'
+        | IDENTIFIER ':' MATRIX_TYPE '[' BASIC_TYPE ']'
+        | IDENTIFIER ':' MATRIX_TYPE '[' BASIC_TYPE ']' '[' CONSTANT ',' CONSTANT ']'
         ;
 
 primary_expression

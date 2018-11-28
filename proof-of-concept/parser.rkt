@@ -69,6 +69,12 @@
       (token 'WHITESPACE lexeme #:skip? #t)]
      [(:: "##" (repetition 0 +inf.0 (intersection (complement "\n") any-char)))
       (token 'COMMENT lexeme #:skip? #t)]
+     [(:: (union (string "int") (string "bool") (string "string")) whitespace) ; must have space after type
+      (token 'BASIC_TYPE lexeme)]
+     [(:: (string "list") whitespace)
+      (token 'LIST_TYPE lexeme)]
+     [(:: (string "matrix") whitespace)
+      (token 'MATRIX_TYPE lexeme)]
      [(repetition 0 +inf.0 (intersection (complement whitespace) (complement (char-set"=()[]:,+-~*/\\^<>&|;")) any-char))
       (token 'IDENTIFIER lexeme)]
      [(eof)

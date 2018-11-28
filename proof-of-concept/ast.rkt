@@ -2,7 +2,7 @@
 
 (provide Pgrm Pgrm? Stmt Stmt? Expr Expr? Constant Constant? id int bool string app int-binop bool-binop
          int-compop string-compop decl assn func if-stmt if-stmt-cond if-stmt-then Type Type? arrow arrow? arrow-dom
-         arrow-cod)
+         arrow-cod matrix matrix? matrixT matrixT? MatrixRow MatrixRow? UNBOUNDED)
 
 (define-type Pgrm (Listof Stmt))
 
@@ -22,6 +22,16 @@
   (U int bool string))
 
 (define Constant? (make-predicate Constant))
+
+(define-type MatrixRow (Listof Constant))
+
+(define MatrixRow? (make-predicate Constant))
+
+(struct matrix
+  ([data : (Listof MatrixRow)])
+  #:transparent)
+
+(define UNBOUNDED -1)
 
 (struct id
   ([name : Symbol])
@@ -92,9 +102,15 @@
   #:transparent)
 
 (define-type Type
-  (U 'int 'bool 'string 'dynamic 'none arrow (Listof Type)))
+  (U 'int 'bool 'string matrixT 'dynamic 'none arrow (Listof Type)))
 
 (define Type? (make-predicate Type))
+
+(struct matrixT
+  ([typeConstr : Type]
+   [rowConstr : Integer]
+   [colConstr : Integer])
+  #:transparent)
 
 (struct arrow
   ([dom : (Listof Type)]
