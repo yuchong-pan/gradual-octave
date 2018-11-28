@@ -14,7 +14,7 @@
 (define (Constant->Octave cnst)
   (cond [(int? cnst) (number->string (int-n cnst))]
         [(bool? cnst) (if (bool-b cnst) "true" "false")]
-        [(string? cnst) (string-append "\"" (str-s cnst) "\"")]
+        [(str? cnst) (string-append "\"" (str-s cnst) "\"")]
         [else (error 'Expr->Octave "Could not convert constant ~a" cnst)]))
 
 (define (Expr->Octave expr)
@@ -31,7 +31,9 @@
   (not (string=? "" s)))
 
 (define (Stmt->Octave stmt depth)
-  (cond [(Expr? stmt) (Expr->Octave stmt)]
+  (cond [(Expr? stmt) (string-append
+                       (spacing depth)
+                       (Expr->Octave stmt))]
         [(decl? stmt) ""] ; ignore
         [(assn? stmt) (string-append
                        (spacing depth)
