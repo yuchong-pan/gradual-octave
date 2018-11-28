@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(provide Pgrm Pgrm? Stmt Stmt? Expr Expr? Constant Constant? id int bool string app int-binop bool-binop
+(provide Pgrm Pgrm? Stmt Stmt? Expr Expr? Constant Constant? id int int-n bool string app int-binop bool-binop
          int-compop string-compop decl assn func if-stmt if-stmt-cond if-stmt-then Type Type? arrow arrow? arrow-dom
          arrow-cod matrix matrix? matrixT matrixT? MatrixRow MatrixRow? UNBOUNDED)
 
@@ -19,11 +19,12 @@
 (define Expr? (make-predicate Expr))
 
 (define-type Constant
-  (U int bool string))
+  (U int bool string matrix))
 
 (define Constant? (make-predicate Constant))
 
-(define-type MatrixRow (Listof Constant))
+(define-type MatrixRow
+  (U Expr (Listof Constant)))
 
 (define MatrixRow? (make-predicate Constant))
 

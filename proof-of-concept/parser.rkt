@@ -67,13 +67,13 @@
       (token 'STRING_LITERAL lexeme)]
      [whitespace
       (token 'WHITESPACE lexeme #:skip? #t)]
-     [(:: "##" (repetition 0 +inf.0 (intersection (complement "\n") any-char)))
+     [(:: (char-set "#%") (repetition 0 +inf.0 (intersection (complement "\n") any-char)))
       (token 'COMMENT lexeme #:skip? #t)]
-     [(:: (union (string "int") (string "bool") (string "string")) whitespace) ; must have space after type
+     [(:: (union "int" "bool" "string")) ; todo: figure out how to not greedy match here
       (token 'BASIC_TYPE lexeme)]
-     [(:: (string "list") whitespace)
+     [(:: "list") ; todo
       (token 'LIST_TYPE lexeme)]
-     [(:: (string "matrix") whitespace)
+     [(:: "matrix") ; todo
       (token 'MATRIX_TYPE lexeme)]
      [(repetition 0 +inf.0 (intersection (complement whitespace) (complement (char-set"=()[]:,+-~*/\\^<>&|;")) any-char))
       (token 'IDENTIFIER lexeme)]

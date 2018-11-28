@@ -47,6 +47,8 @@
   [i-null]
   [i-id-type (name symbol?)
              (type Type?)]
+  [i-row-end (val (or/c Expr? I-TOC?))]
+  [i-matrix (rows (listof (or/c (listof Expr?) (listof I-TOC?))))]
   [i-assn-decl (vars (listof i-id-type?))
                (expr (or/c Expr? I-TOC?))]
   [i-app (fun (or/c Expr? I-TOC?))
@@ -134,7 +136,11 @@
                      [i-if-stmt (c t e) (cons (if-stmt (desugar-single c env)
                                                        (helper t env)
                                                        (helper e env))
-                                              (helper (rest iast-list) env))])]))]
+                                              (helper (rest iast-list) env))]
+                     [i-matrix (rs) (cons (matrix (map (lambda (r) (helper r env)) rs))
+                                          (helper (rest iast-list) env))]
+                     [else
+                      (error 'desugar "Unexpected case: ~a" (first iast-list))])]))]
     (helper iast-list (mtEnv))))
                   
 (define (parse-intermediate stx)
@@ -172,7 +178,7 @@
                      (? (stx-atom? "["))
                      (? syntax? s-stx)
                      (? (stx-atom? "]")))
-               (i-id-type (stx->id id-stx) (matrixT (stx->t f-stx) 1 (parse-literal s-stx)))]
+               (i-id-type (stx->id id-stx) (matrixT (stx->t f-stx) 1 (int-n (parse-literal s-stx))))]
               [(list (? (stx-atom? 'typed_identifier))
                      (? syntax? id-stx)
                      (? (stx-atom? ":"))
@@ -185,7 +191,7 @@
                      (? (stx-atom? ","))
                      (? syntax? th-stx)
                      (? (stx-atom? "]")))
-               (i-id-type (stx->id id-stx) (matrixT (stx->t f-stx) (parse-literal s-stx) (parse-literal th-stx)))]
+               (i-id-type (stx->id id-stx) (matrixT (stx->t f-stx) (int-n (parse-literal s-stx)) (int-n (parse-literal th-stx))))]
               
               ; octave
               [(list (? (stx-atom? 'octave))
@@ -274,7 +280,7 @@
                      (? (stx-atom? "="))
                      (? (stx-many? 'expression) e-stx))
                (local [(define ids (helper pe-stx))
-                       (define id-list (or (and (list? ids) ids)
+                       (define id-list (or (and (i-matrix? ids) (map first (i-matrix-rows ids)))
                                            (list ids)))] ; can get single assignments too
                  (i-assn-decl id-list (helper e-stx)))]
 
@@ -327,12 +333,26 @@
               [(list (? (stx-atom? 'primary_expression))
                      (? (stx-atom? "["))
                      (? (stx-atom? "]")))
-               (matrix 'dynamic UNBOUNDED UNBOUNDED empty)]
+               (i-matrix empty)]
               [(list (? (stx-atom? 'primary_expression))
                      (? (stx-atom? "["))
                      (? (stx-many? 'array_list) al-stx)
                      (? (stx-atom? "]")))
-               (matrix 'dynamic UNBOUNDED UNBOUNDED (helper al-stx))]
+               (local [(define (extract-rows-helper flat-vals rsf acc-res)
+                         (cond [(empty? flat-vals) (if (not (empty? acc-res))
+                                                        (reverse (cons acc-res rsf))
+                                                        (reverse rsf))]
+                               [else
+                                (extract-rows-helper (rest flat-vals)
+                                                     (if (i-row-end? (first flat-vals))
+                                                         (cons (append acc-res (list (i-row-end-val (first flat-vals)))) rsf)
+                                                         rsf)
+                                                     (if (i-row-end? (first flat-vals))
+                                                         empty
+                                                         (cons (first flat-vals) acc-res)))]))
+                       (define (extract-rows flat-vals)
+                         (extract-rows-helper flat-vals empty empty))]
+                 (i-matrix (extract-rows (helper al-stx))))]
 
               ; array_list
               [(list (? (stx-atom? 'array_list))
@@ -349,7 +369,7 @@
                (helper e-stx)]
               [(list (? (stx-atom? 'array_element))
                      (? (stx-many? 'expression_statement) es-stx))
-               (helper es-stx)]
+               (i-row-end (helper es-stx))] ; hack: if this is a statement, then it's the last of its row.
 
               ; expression
               [(list (? (stx-atom? 'expression))
