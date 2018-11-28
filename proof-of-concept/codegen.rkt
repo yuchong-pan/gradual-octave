@@ -21,10 +21,10 @@
   (cond [(id? expr) (symbol->string (id-name expr))]
         [(Constant? expr) (Constant->Octave expr)]
         [(app? expr) (string-append (Expr->Octave (app-fun expr)) "(" (string-join (map Expr->Octave (app-args expr)) ", ") ")")]
-        [(int-binop? expr) (string-append (Expr->Octave (int-binop-lhs expr)) (~a int-binop-op expr) (Expr->Octave (int-binop-rhs expr)))]
-        [(bool-binop? expr) (string-append (Expr->Octave (bool-binop-lhs expr)) (~a bool-binop-op expr) (Expr->Octave (bool-binop-rhs expr)))]
-        [(int-compop? expr) (string-append (Expr->Octave (int-compop-lhs expr)) (~a int-compop-op expr) (Expr->Octave (int-compop-rhs expr)))]
-        [(string-compop? expr) (string-append (Expr->Octave (string-compop-lhs expr)) (~a string-compop-op expr) (Expr->Octave (string-compop-rhs expr)))] 
+        [(int-binop? expr) (string-append (Expr->Octave (int-binop-lhs expr)) (symbol->string (int-binop-name expr)) (Expr->Octave (int-binop-rhs expr)))]
+        [(bool-binop? expr) (string-append (Expr->Octave (bool-binop-lhs expr)) (symbol->string (bool-binop-name expr)) (Expr->Octave (bool-binop-rhs expr)))]
+        [(int-compop? expr) (string-append (Expr->Octave (int-compop-lhs expr)) (symbol->string (int-compop-name expr)) (Expr->Octave (int-compop-rhs expr)))]
+        [(string-compop? expr) (string-append (Expr->Octave (string-compop-lhs expr)) (symbol->string (string-compop-name expr)) (Expr->Octave (string-compop-rhs expr)))]
         [else (error 'Expr->Octave "Could not convert expression ~a" expr)]))
 
 (define (not-mt-str s)
