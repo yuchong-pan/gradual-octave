@@ -21,7 +21,7 @@
   (match c
     [(int n) 'int]
     [(bool b) 'bool]
-    [(string s) 'string]
+    [(str s) 'string]
     [else (error 'typeof "not implemented")]))
 
 (define-type Env (Listof (Pair Symbol Type)))
@@ -92,7 +92,7 @@
            (cdr result)))]
     [(int i) 'int]
     [(bool b) 'bool]
-    [(string s) 'string]
+    [(str s) 'string]
     [(int-binop op lhs rhs)
      (if (and (consistent? (typecheck-expr env lhs) 'int)
               (consistent? (typecheck-expr env rhs) 'int))

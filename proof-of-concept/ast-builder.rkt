@@ -31,7 +31,7 @@
   (or (and (string->number (syntax->datum stx)) (int (string->number (syntax->datum stx))))
       (and (string=? (syntax->datum stx) "true") (bool #t))
       (and (string=? (syntax->datum stx) "false") (bool #f))
-      (string (syntax->datum stx))))
+      (str (syntax->datum stx))))
 
 ; we can use this to skip empty or not-implemented expressions
 (define (valid? e)
