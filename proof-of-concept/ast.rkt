@@ -1,8 +1,10 @@
 #lang typed/racket
 
-(provide Pgrm Pgrm? Stmt Stmt? Expr Expr? Constant Constant? id int bool string app int-binop bool-binop
-         int-compop string-compop decl assn func if-stmt if-stmt-cond if-stmt-then Type Type? arrow arrow? arrow-dom
-         arrow-cod)
+(provide Pgrm Pgrm? Stmt Stmt? Expr Expr? Constant Constant? id id? id-name int int? int-n bool bool? bool-b string string? string-s
+         app app? app-fun app-args int-binop int-binop? int-binop-op int-binop-lhs int-binop-rhs bool-binop bool-binop? bool-binop-op bool-binop-lhs bool-binop-rhs
+         int-compop int-compop? int-compop-op int-compop-lhs int-compop-rhs string-compop string-compop? string-compop-op string-compop-lhs string-compop-rhs
+         decl decl? decl-name decl-type assn assn? assn-vars assn-expr func func? func-name func-args func-rets func-body if-stmt if-stmt? if-stmt-cond if-stmt-then if-stmt-else
+         Type Type? arrow arrow? arrow-dom arrow-cod)
 
 (define-type Pgrm (Listof Stmt))
 

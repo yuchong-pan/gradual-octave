@@ -1,0 +1,82 @@
+#lang racket
+
+(require "ast.rkt")
+
+(define (spacing depth)
+  (local [(define (helper depth rsf)
+            (cond [(zero? depth) rsf]
+                  [else
+                   (helper (sub1 depth)
+                           (string-append "    " rsf))]))]
+    (helper depth "")))
+
+(define (Constant->Octave cnst)
+  (cond [(int? cnst) (number->string (int-n cnst))]
+        [(bool? cnst) (if (bool-b cnst) "true" "false")]
+        [(string? cnst) (string-append "\"" (string-s cnst) "\"")]
+        [else (error 'Expr->Octave "Could not convert constant ~a" cnst)]))
+
+(define (Expr->Octave expr)
+  (cond [(id? expr) (symbol->string (id-name expr))]
+        [(Constant? expr) (Constant->Octave expr)]
+        [(app? expr) (string-append (Expr->Octave (app-fun expr)) "(" (string-join (map Expr->Octave (app-args expr)) ", ") ")")]
+        [(int-binop? expr) (string-append (Expr->Octave (int-binop-lhs expr)) (~a int-binop-op expr) (Expr->Octave (int-binop-rhs expr)))]
+        [(bool-binop? expr) (string-append (Expr->Octave (bool-binop-lhs expr)) (~a bool-binop-op expr) (Expr->Octave (bool-binop-rhs expr)))]
+        [(int-compop? expr) (string-append (Expr->Octave (int-compop-lhs expr)) (~a int-compop-op expr) (Expr->Octave (int-compop-rhs expr)))]
+        [(string-compop? expr) (string-append (Expr->Octave (string-compop-lhs expr)) (~a string-compop-op expr) (Expr->Octave (string-compop-rhs expr)))] 
+        [else (error 'Expr->Octave "Could not convert expression ~a" expr)]))
+
+(define (Stmt->Octave stmt depth)
+  (cond [(Expr? stmt) (Expr->Octave stmt)]
+        ; ignore decl
+        [(assn? stmt) (string-append
+                       (spacing depth)
+                       (if (> (length (assn-vars stmt)) 1)
+                           (string-append
+                            "["
+                            (string-join (map symbol->string (assn-vars stmt)) ", ")
+                            "]")
+                           (symbol->string (first (assn-vars stmt))))
+                       " = "
+                       (Expr->Octave (assn-expr stmt)))]
+        [(func? stmt) (string-append
+                       (spacing depth)
+                       (if (> (length (func-rets stmt)) 1)
+                           (string-append
+                            "["
+                            (string-join (map (lambda (r) (symbol->string (first r))) (func-rets stmt)) ", ")
+                            "]"
+                            )
+                           (symbol->string (first (func-rets stmt))))
+                       " = function "
+                       (symbol->string (func-name stmt))
+                       "("
+                       (string-join (map (lambda (a) (symbol->string (first a))) (func-args stmt))  ", ")
+                       ")"
+                       (string-join (map (lambda (stmt) (Stmt->Octave stmt (add1 depth))) (func-body stmt)) "\n"))]
+        [(if-stmt? stmt) (string-append
+                          (spacing depth)
+                          "if ("
+                          (Expr->Octave (if-stmt-cond stmt))
+                          ")\n"
+                          (string-join (map (lambda (stmt) (Stmt->Octave stmt (add1 depth))) (if-stmt-then stmt)) "\n")
+                          "\n"
+                          (if (not (empty? (if-stmt-else stmt)))
+                              (string-append
+                               (spacing depth)
+                               "else\n"
+                               (string-join (map (lambda (stmt) (Stmt->Octave stmt (add1 depth))) (if-stmt-else stmt)) "\n"))
+                               ""
+                              ))]
+        [else (error 'Stmt->Octave "Could not convert statement: ~a" stmt)]))
+
+(define (Pgrm->Octave pgrm)
+  (local [(define (helper pgrm rsf)
+            (cond [(empty? pgrm) rsf]
+                  [else
+                   (helper (rest pgrm)
+                           (string-append
+                            (Stmt->Octave (first pgrm) 0)
+                            "\n"
+                            rsf))]))]
+    (helper pgrm "")))
