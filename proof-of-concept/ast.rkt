@@ -1,8 +1,10 @@
 #lang typed/racket
 
-(provide Pgrm Pgrm? Stmt Stmt? Expr Expr? Constant Constant? id int bool string app int-binop bool-binop
-         int-compop string-compop decl assn func if-stmt if-stmt-cond if-stmt-then Type Type? arrow arrow? arrow-dom
-         arrow-cod)
+(provide Pgrm Pgrm? Stmt Stmt? Expr Expr? Constant Constant? id id? id-name int int? int-n bool bool? bool-b str str? str-s
+         app app? app-fun app-args int-binop int-binop? int-binop-name int-binop-op int-binop-lhs int-binop-rhs bool-binop bool-binop? bool-binop-name bool-binop-op bool-binop-lhs bool-binop-rhs
+         int-compop int-compop? int-compop-name int-compop-op int-compop-lhs int-compop-rhs string-compop string-compop? string-compop-name string-compop-op string-compop-lhs string-compop-rhs
+         decl decl? decl-name decl-type assn assn? assn-vars assn-expr func func? func-name func-args func-rets func-body if-stmt if-stmt? if-stmt-cond if-stmt-then if-stmt-else
+         Type Type? arrow arrow? arrow-dom arrow-cod)
 
 (define-type Pgrm (Listof Stmt))
 
@@ -19,7 +21,7 @@
 (define Expr? (make-predicate Expr))
 
 (define-type Constant
-  (U int bool string))
+  (U int bool str))
 
 (define Constant? (make-predicate Constant))
 
@@ -35,7 +37,7 @@
   [(b : Boolean)]
   #:transparent)
 
-(struct string
+(struct str
   ([s : String])
   #:transparent)
 
@@ -45,25 +47,29 @@
   #:transparent)
 
 (struct int-binop
-  ([op  : (-> Integer Integer Integer)]
+  ([name : Symbol]
+   [op  : (-> Integer Integer Integer)]
    [lhs : Expr]
    [rhs : Expr])
   #:transparent)
 
 (struct bool-binop
-  ([op  : (-> Boolean Boolean Boolean)]
+  ([name : Symbol]
+   [op  : (-> Boolean Boolean Boolean)]
    [lhs : Expr]
    [rhs : Expr])
   #:transparent)
 
 (struct int-compop
-  ([op  : (-> Integer Integer Boolean)]
+  ([name : Symbol]
+   [op  : (-> Integer Integer Boolean)]
    [lhs : Expr]
    [rhs : Expr])
   #:transparent)
 
 (struct string-compop
-  ([op  : (-> String String Boolean)]
+  ([name : Symbol]
+   [op  : (-> String String Boolean)]
    [lhs : Expr]
    [rhs : Expr])
   #:transparent)

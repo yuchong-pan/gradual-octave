@@ -31,7 +31,7 @@
   (or (and (string->number (syntax->datum stx)) (int (string->number (syntax->datum stx))))
       (and (string=? (syntax->datum stx) "true") (bool #t))
       (and (string=? (syntax->datum stx) "false") (bool #f))
-      (string (syntax->datum stx))))
+      (str (syntax->datum stx))))
 
 ; we can use this to skip empty or not-implemented expressions
 (define (valid? e)
@@ -51,10 +51,12 @@
                (expr (or/c Expr? I-TOC?))]
   [i-app (fun (or/c Expr? I-TOC?))
          (args (listof (or/c Expr? I-TOC?)))]
-  [i-int-binop (op procedure?)
+  [i-int-binop (name symbol?)
+               (op procedure?)
                (lhs (or/c Expr? I-TOC?))
                (rhs (or/c Expr? I-TOC?))]
-  [i-bool-binop (op procedure?)
+  [i-bool-binop (name symbol?)
+                (op procedure?)
                 (lhs (or/c Expr? I-TOC?))
                 (rhs (or/c Expr? I-TOC?))]
   [i-func (name i-id-type?)
@@ -116,14 +118,16 @@
                                            (helper (rest iast-list) (add-all-env new-env-list env))))]
                      [i-app (f a) (cons (app (desugar-single f env) (helper a env))
                                         (helper (rest iast-list) env))]
-                     [i-int-binop (o l r) (cons (int-binop o
-                                                           (desugar-single l env)
-                                                           (desugar-single r env))
-                                                (helper (rest iast-list) env))]
-                     [i-bool-binop (o l r) (cons (bool-binop o
+                     [i-int-binop (n o l r) (cons (int-binop n
+                                                             o
                                                              (desugar-single l env)
                                                              (desugar-single r env))
-                                                (helper (rest iast-list) env))]
+                                                  (helper (rest iast-list) env))]
+                     [i-bool-binop (n o l r) (cons (bool-binop n
+                                                               o
+                                                               (desugar-single l env)
+                                                               (desugar-single r env))
+                                                   (helper (rest iast-list) env))]
                      [i-func (n a r b) (cons (func (i-id-type-name n)
                                                    (map (lambda (x) (cons (i-id-type-name x)
                                                                           (i-id-type-type x))) a)
@@ -135,13 +139,13 @@
                                                        (helper t env)
                                                        (helper e env))
                                               (helper (rest iast-list) env))])]))]
-  (helper iast-list (mtEnv))))
+    (helper iast-list (mtEnv))))
                   
 (define (parse-intermediate stx)
   (local [(define (helper stx)
-      (match (syntax->list stx)
+            (match (syntax->list stx)
         
-      ; typed_identifier
+              ; typed_identifier
       [(list (? (stx-atom? 'typed_identifier))
              (? syntax? id-stx))
        (i-id-type (stx->id id-stx) 'dynamic)] ; dynamic type if no type given
@@ -333,7 +337,7 @@
              (? (stx-many? 'or_expression) oe-stx)
              (? (stx-atom? "|"))
              (? (stx-many? 'and_expression) ae-stx))
-         (i-bool-binop (lambda (x y) (not (and (false? x) (false? y)))) (helper oe-stx) (helper ae-stx))]
+         (i-bool-binop '\| (lambda (x y) (not (and (false? x) (false? y)))) (helper oe-stx) (helper ae-stx))]
 
       ; and_expression
       [(list (? (stx-atom? 'and_expression))
@@ -343,7 +347,7 @@
              (? (stx-many? 'and_expression) ae-stx)
              (? (stx-atom? "&"))
              (? (stx-many? 'equality_expression) ee-stx))
-       (i-bool-binop (lambda (x y) (not (or (false? x) (false? y)))) (helper ae-stx) (helper ee-stx))]
+       (i-bool-binop '& (lambda (x y) (not (or (false? x) (false? y)))) (helper ae-stx) (helper ee-stx))]
 
       ; equality_expression
       [(list (? (stx-atom? 'equality_expression))
@@ -353,12 +357,12 @@
              (? (stx-many? 'equality_expression) ee-stx)
              (? (stx-atom? "=="))
              (? (stx-many? 'relational_expression) re-stx))
-       (i-bool-binop (lambda (x y) (equal? x y)) (helper ee-stx) (helper re-stx))] ; helper for this too for now
+       (i-bool-binop '== (lambda (x y) (equal? x y)) (helper ee-stx) (helper re-stx))] ; helper for this too for now
       [(list (? (stx-atom? 'equality_expression))
              (? (stx-many? 'equality_expression) ee-stx)
              (? (stx-atom? "!="))
              (? (stx-many? 'relational_expression) re-stx))
-       (i-bool-binop (lambda (x y) (not (equal? x y))) (helper ee-stx) (helper re-stx))]
+       (i-bool-binop '!= (lambda (x y) (not (equal? x y))) (helper ee-stx) (helper re-stx))]
 
       ; relational_expression
       [(list (? (stx-atom? 'relational_expression))
@@ -368,22 +372,22 @@
              (? (stx-many? 'relational_expression) re-stx)
              (? (stx-atom? "<"))
              (? (stx-many? 'additive_expression) ae-stx))
-       (i-bool-binop (lambda (x y) (< x y)) (helper re-stx) (helper ae-stx))]
+       (i-bool-binop '< (lambda (x y) (< x y)) (helper re-stx) (helper ae-stx))]
       [(list (? (stx-atom? 'relational_expression))
              (? (stx-many? 'relational_expression) re-stx)
              (? (stx-atom? ">"))
              (? (stx-many? 'additive_expression) ae-stx))
-       (i-bool-binop (lambda (x y) (> x y)) (helper re-stx) (helper ae-stx))]
+       (i-bool-binop '> (lambda (x y) (> x y)) (helper re-stx) (helper ae-stx))]
       [(list (? (stx-atom? 'relational_expression))
              (? (stx-many? 'relational_expression) re-stx)
              (? (stx-atom? "<="))
              (? (stx-many? 'additive_expression) ae-stx))
-       (i-bool-binop (lambda (x y) (<= x y)) (helper re-stx) (helper ae-stx))]
+       (i-bool-binop '<= (lambda (x y) (<= x y)) (helper re-stx) (helper ae-stx))]
       [(list (? (stx-atom? 'relational_expression))
              (? (stx-many? 'relational_expression) re-stx)
              (? (stx-atom? ">="))
              (? (stx-many? 'additive_expression) ae-stx))
-       (i-bool-binop (lambda (x y) (>= x y)) (helper re-stx) (helper ae-stx))]
+       (i-bool-binop '>= (lambda (x y) (>= x y)) (helper re-stx) (helper ae-stx))]
 
       ; additive_expression
       [(list (? (stx-atom? 'additive_expression))
@@ -393,12 +397,12 @@
              (? (stx-many? 'additive_expression) ae-stx)
              (? (stx-atom? "+"))
              (? (stx-many? 'multiplicative_expression) me-stx))
-       (i-int-binop (lambda (x y) (+ x y)) (helper ae-stx) (helper me-stx))] ; again, probably won't need lambda but hm
+       (i-int-binop '+ (lambda (x y) (+ x y)) (helper ae-stx) (helper me-stx))] ; again, probably won't need lambda but hm
       [(list (? (stx-atom? 'additive_expression))
              (? (stx-many? 'additive_expression) ae-stx)
              (? (stx-atom? "-"))
              (? (stx-many? 'multiplicative_expression) me-stx))
-       (i-int-binop (lambda (x y) (- x y)) (helper ae-stx) (helper me-stx))] ; these actually might need changing later
+       (i-int-binop '- (lambda (x y) (- x y)) (helper ae-stx) (helper me-stx))] ; these actually might need changing later
                                                                            ; for matrices, not only ints
 
       ; multiplicative_expression
@@ -409,42 +413,42 @@
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? "*"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (i-int-binop (lambda (x y) (* x y)) (helper me-stx) (helper ue-stx))]
+       (i-int-binop '* (lambda (x y) (* x y)) (helper me-stx) (helper ue-stx))]
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? "/"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (i-int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))]
+       (i-int-binop '/ (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))]
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? "\\"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (i-int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: this doesn't work yet
+       (i-int-binop '\ (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: this doesn't work yet
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? "^"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (i-int-binop (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))]
+       (i-int-binop '^ (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))]
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".*"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (i-int-binop (lambda (x y) (* x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise multiplication
+       (i-int-binop '.* (lambda (x y) (* x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise multiplication
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? "./"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (i-int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise right division
+       (i-int-binop './ (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise right division
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".\\"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (i-int-binop (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise left division
+       (i-int-binop '.\ (lambda (x y) (/ x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise left division
       [(list (? (stx-atom? 'multiplicative_expression))
              (? (stx-many? 'multiplicative_expression) me-stx)
              (? (stx-atom? ".^"))
              (? (stx-many? 'unary_expression) ue-stx))
-       (i-int-binop (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise power
+       (i-int-binop '.^ (lambda (x y) (expt x y)) (helper me-stx) (helper ue-stx))] ; TODO: Element-wise power
 
       ; unary_expression
       [(list (? (stx-atom? 'unary_expression))
