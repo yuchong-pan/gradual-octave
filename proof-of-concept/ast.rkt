@@ -4,7 +4,7 @@
          app app? app-fun app-args int-binop int-binop? int-binop-name int-binop-op int-binop-lhs int-binop-rhs bool-binop bool-binop? bool-binop-name bool-binop-op bool-binop-lhs bool-binop-rhs
          int-compop int-compop? int-compop-name int-compop-op int-compop-lhs int-compop-rhs string-compop string-compop? string-compop-name string-compop-op string-compop-lhs string-compop-rhs
          decl decl? decl-name decl-type assn assn? assn-vars assn-expr func func? func-name func-args func-rets func-body if-stmt if-stmt? if-stmt-cond if-stmt-then if-stmt-else
-         Type Type? arrow arrow? arrow-dom arrow-cod)
+         Type Type? arrow arrow? arrow-dom arrow-cod matrix matrix? matrix-data matrixT matrixT? MatrixRow MatrixRow? UNBOUNDED)
 
 (define-type Pgrm (Listof Stmt))
 
@@ -21,9 +21,20 @@
 (define Expr? (make-predicate Expr))
 
 (define-type Constant
-  (U int bool str))
+  (U int bool str matrix))
 
 (define Constant? (make-predicate Constant))
+
+(define-type MatrixRow
+  (U Expr (Listof Constant)))
+
+(define MatrixRow? (make-predicate Constant))
+
+(struct matrix
+  ([data : (Listof MatrixRow)])
+  #:transparent)
+
+(define UNBOUNDED -1)
 
 (struct id
   ([name : Symbol])
@@ -98,9 +109,15 @@
   #:transparent)
 
 (define-type Type
-  (U 'int 'bool 'string 'dynamic 'none arrow (Listof Type)))
+  (U 'int 'bool 'string matrixT 'dynamic 'none arrow (Listof Type)))
 
 (define Type? (make-predicate Type))
+
+(struct matrixT
+  ([typeConstr : Type]
+   [rowConstr : Integer]
+   [colConstr : Integer])
+  #:transparent)
 
 (struct arrow
   ([dom : (Listof Type)]

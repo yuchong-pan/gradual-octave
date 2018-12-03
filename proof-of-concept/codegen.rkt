@@ -11,10 +11,18 @@
                            (string-append "    " rsf))]))]
     (helper depth "")))
 
+(define (matrix-helper data)
+  (cond [(empty? data) ""]
+        [else
+         (string-join (map (lambda (row)
+                             (string-join (map Constant->Octave row) " ")) data) ; assume list of constants for now
+                      "; ")]))
+                 
 (define (Constant->Octave cnst)
   (cond [(int? cnst) (number->string (int-n cnst))]
         [(bool? cnst) (if (bool-b cnst) "true" "false")]
-        [(str? cnst) (string-append "\"" (str-s cnst) "\"")]
+        [(str? cnst) (str-s cnst)] ; already have ""
+        [(matrix? cnst) (string-append "[" (matrix-helper (matrix-data cnst)) "]")]
         [else (error 'Expr->Octave "Could not convert constant ~a" cnst)]))
 
 (define (Expr->Octave expr)
