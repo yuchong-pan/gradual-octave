@@ -91,3 +91,10 @@
 
 (define (show-octave-code pgrm)
   (display (Pgrm->Octave pgrm)))
+
+(define (test1-code) (show-octave-code test1-ast))
+(define (test2-code) (show-octave-code test2-ast))
+(define (test3-code) (show-octave-code test3-ast))
+(define (test4-code) (show-octave-code test4-ast))
+(define (test5-code) (show-octave-code test5-ast))
+(define (test6-code) (show-octave-code test6-ast))
