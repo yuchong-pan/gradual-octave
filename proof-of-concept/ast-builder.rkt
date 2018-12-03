@@ -353,7 +353,7 @@
                                                          rsf)
                                                      (if (i-row-end? (first flat-vals))
                                                          empty
-                                                         (cons (first flat-vals) acc-res)))]))
+                                                         (append acc-res (list (first flat-vals)))))]))
                        (define (extract-rows flat-vals)
                          (extract-rows-helper flat-vals empty empty))]
                  (i-matrix (extract-rows (helper al-stx))))]
