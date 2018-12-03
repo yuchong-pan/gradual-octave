@@ -21,7 +21,7 @@
   (match c
     [(int n) 'int]
     [(bool b) 'bool]
-    [(string s) 'string]
+    [(str s) 'string]
     [else (error 'typeof "not implemented")]))
 
 (define-type Env (Listof (Pair Symbol Type)))
@@ -92,23 +92,23 @@
            (cdr result)))]
     [(int i) 'int]
     [(bool b) 'bool]
-    [(string s) 'string]
-    [(int-binop op lhs rhs)
+    [(str s) 'string]
+    [(int-binop n op lhs rhs)
      (if (and (consistent? (typecheck-expr env lhs) 'int)
               (consistent? (typecheck-expr env rhs) 'int))
          'int
          (error 'typecheck-expr "Apply integer binary operation with non-int values"))]
-    [(bool-binop op lhs rhs)
+    [(bool-binop n op lhs rhs)
      (if (and (consistent? (typecheck-expr env lhs) 'bool)
               (consistent? (typecheck-expr env rhs) 'bool))
          'bool
          (error 'typecheck-expr "Apply Boolean binary operation with non-bool values"))]
-    [(int-compop op lhs rhs)
+    [(int-compop n op lhs rhs)
      (if (and (consistent? (typecheck-expr env lhs) 'int)
               (consistent? (typecheck-expr env rhs) 'int))
          'bool
          (error 'typecheck-expr "Apply integer comparison operation with non-int values"))]
-    [(string-compop op lhs rhs)
+    [(string-compop n op lhs rhs)
      (if (and (consistent? (typecheck-expr env lhs) 'string)
               (consistent? (typecheck-expr env rhs) 'string))
          'bool
