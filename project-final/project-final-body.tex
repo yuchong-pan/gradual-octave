@@ -196,8 +196,8 @@ Currently, with our matrix type checking, we only support static dimension check
     \begin{lstlisting}[language=octave]
 {n:int, m:int, p:int}
 function C:matrix[int][n,p] =
-        f(A:matrix[int][n,m], B:matrix[int][m,p])
-    # ...
+    f(A:matrix[int][n,m], B:matrix[int][m,p])
+  # ...
 endfunction
     \end{lstlisting}
     \caption[]{{Matrix arguments with parametric dimensions}}
@@ -210,8 +210,8 @@ With this, we can both allow the user to type check dimensions while also giving
     \begin{lstlisting}[language=octave]
 {m:int, p:int}
 function C:matrix[int][5,p] = 
-        f(A:matrix[int][5,m], B:matrix[int][m,p])
-    # ...
+    f(A:matrix[int][5,m], B:matrix[int][m,p])
+  # ...
 endfunction
     \end{lstlisting}
     \caption[]{{Matrix arguments with parametric and static dimensions}}
