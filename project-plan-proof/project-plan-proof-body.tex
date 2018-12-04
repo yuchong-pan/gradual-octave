@@ -8,26 +8,6 @@
 \section{Introduction}
 Static and dynamic type systems for languages have their own distinct advantages. For instance, a static type system enables early error detection and enforces a certain extent of code style within a collaborative setting. On the other hand, the lightweight workflow associated with dynamic typing is highly suited for rapid prototyping and iterative approaches. Over the past several decades, researchers in the programming language community have been working on integrating aspects of both static typing and dynamic typing with the goal of allowing programmers access to advantages of both type systems. Gradual typing---originally proposed by \citet{siek2006gradual}---is one such solution that combines the two type systems and allows the end-users to optionally provide typing information. In recent times, it has largely gained traction in the programming language community and has been adopted by many programming languages both within industry and academia. Certain examples include Typed Racket \cite{tobin2006interlanguage}, TypeScript \cite{bierman2014understanding} and Reticulated Python \cite{vitousek2014design}.
 
-\section{Advantages of Octave}
-\subsection{Octave Is Relevant}
-Octave is an open-source scientific programming language that uses a dynamic type system. It is widely employed in the domain of statistics, mathematics and machine learning for idea validation and fast prototyping. Octave shares the vast majority of its syntax and functionality with MATLAB, including but not limited to aspects such as having matrices as fundamental data type, built-in support for complex numbers, built-in math functions with extensive function libraries, and extensibility of user-defined functions \cite{wikibooks}. Therefore there is already a large audience and domain to potentially engage with for the proposed project. Note that in the context of domain research for the current discussion, we likewise refer to several supporting sources for MATLAB due to the near-analogous properties of the two languages.
-
-\subsection{Octave Benefits From Gradual Typing}
-In a paper describing program specializations used to produce efficient function overloading in Octave \cite{olmos2003turning}, Olmos et al. clearly illustrate the benefits of introducing static type-checking and shape analysis into Octave. In their work, static type and shape inferencing is used to directly reduce the number of type and shape checks needed at runtime and in doing so they can improve the efficiency of existing code. Functions and operators are highly overloaded in Octave to provide a simple interface for the end-users; however, the inevitable tradeoff for this flexibility is computational performance at runtime. The runtime system is responsible for type-checking, array shape determination, function call dispatching, and handling possible runtime errors. Hence Octave suffers from a number of computational inefficiencies that may be improved provided additional static type and shape context during the compilation step.
-
-\section{Advantages of Gradual Typing}
-In this section, we highlight several advantages of introducing a gradual type system to an existing dynamically-typed programming language such as Octave.
-
-\subsection{Gradual Typing Incorporates Advantages from Static and Dynamic Typing}
-It is widely acknowledged that static and dynamic type systems have their respective benefits and drawbacks. For instance, a static type system allows mistakes in a computer program to be caught at an earlier stage, preventing fatal errors in production environments. In contrast, bugs in a dynamically-typed language can usually only be detected at runtime, requiring numerous unit tests to ensure the correctness of a single piece of code. On the other hand, dynamically-typed languages are usually more flexible and accept various disciplines or coding practices, making them more suitable for tasks like idea validation, fast prototyping and scripting. Static typing, however, enforces certain coding disciplines and some degree of abstraction, which forces programmers to consider these design questions from the very beginning. Therefore, there are sure benefits and pitfalls that exist within both type systems.
-
-In a gradual type system, programmers are able to decide which regions of code in a computer program are statically or dynamically typed, making different pieces suitable for different stages and scenarios \cite{siek2006gradual}. The Blame-Subtyping Theorem implies that statically-typed regions in a gradual type system cannot be blamed for type-casting errors and are therefore easy to analyze \cite{siek2015refined}. Hence, computer programs written in a gradually-typed languages take advantage of static typing in some regions while enjoying the flexibility of dynamic typing in other regions, integrating the benefits from both type paradigms in a single program simultaneously.
-
-\subsection{Gradual Typing Enables Evolution of Programs}
-Due to flexibility of dynamically-typed programming languages, it is common in industry that programs are initially developed in a dynamically-typed programming language for reasons like fast prototyping, idea validation and scripting. However, dynamically-typed programming languages usually expose programs to safety and security issues, which sometimes lead to fatal errors and even monetary losses in production environments. Furthermore, the runtime performance of dynamically-typed programs is unable to compete with that of statically-typed languages as static type systems are able to check many aspects of computer programs well before they execute. In order to resolve the issues mentioned above, prototyping programs in industry are sometimes refactored to statically-typed languages, in order to reduce the possibility of errors as well as to enhance runtime performance.
-
-This process, nevertheless, is undoubtedly time-consuming and error-prone. The gradual guarantee ensures that computer programs remain well-typed as long as type annotations are correctly added \cite{siek2015refined}. The opposite---removing type annotations from a program does not break programs---is likewise always guaranteed in a gradual type system \cite{siek2015refined}. Therefore with the aid of gradual typing, programmers are able to gradually evolve their programs from untyped to fully-typed with type annotations without ever breaking the programs.
-
 \section{Project Distinction and Novel Aspects}
 There are currently no gradual typing projects for Octave, and from the discussion above we have identified several advantages in applying gradual typing to the language.
 
@@ -375,9 +355,50 @@ For this task, we now propose the following preliminary syntax for matrices and 
 For example, if we had {\tt m:matrix[int][2,2] = [1,2; 3,4]}, this will successfully type check. In contrast, if we have  {\tt m:matrix[int][2,2] = [1,2; 3,4; 5,6]}, this will violate the dimension check as we create a 3x2 matrix instead of the declared 2x2. Additionally, {\tt m:matrix[string][2,2] = [1,2; 3,4]} will violate the type consistency of the matrix. Since we are introducing gradual typing, we will also allow {\tt matrix[2,2] = [1,2; 3,4]} which would allow any type to be assigned to the matrix.
 
 \subsection{High Risk Reach Goals}
-Potential high risk reach goals are: web editor, dependent type support, and performance benchmark. First, we can implement a web editor that helps with debugging code with a GUI component. Second, we can develop a fully dependent type support for boundary checks. Finally, we can compare the performance of the compiled version versus the generated original code.
+To further extend this project, we propose a few future goals that can enhance the capabilities of this project. Potential high risk reach goals are: web IDE, dependent type support, and performance benchmark.
 
-We hope to create a meaningful and useful tool for Octave developers to use and ideally contribute towards in the future.
+\subsubsection{Web IDE}
+First, we can implement a web IDE that helps with debugging code with a GUI component. The main motive behind this is we want to be able to have static type checks running constantly in the background. This will enhance usability as the GUI will be able to constantly display typing errors instead of requiring the user to periodically ask for feedback. We believe usability is a big factor in drawing in users to a new tool. with a GUI, it will create an easier learning experience as well as a cleaner environment. The editor we have in mind will be similar to IDEs such as Visual Studio Code or IntelliJ.
+
+Moreover, we can support type inference in our gradual extension to Octave, in order to automatically type-check untyped Octave programs. This will be very useful for a gradual migration from untyped code to fully-typed programs, and integrating type inference in the web IDE will largely aid programmers in inferring types from untyped Octave code and Octave libraries. \citet{siek2008gradual} discussed the integration of gradual typing and type inference, and proposed a unification-based algorithm to perform type inference in a gradual type system. \citet{garcia2015principal} proposed a new approach to infer types in a gradually-typed language. 
+
+\subsubsection{Dependent Type Support}
+Second, we can develop a dependent type support for boundary checks. The idea was first proposed by \citet{xi1998eliminating}, and our syntax design is similar to the syntax provided in that paper. Moreover, interoperability between gradual typing and dependent types was discussed by \citet{lehmann2017gradual}.
+
+Currently, with our matrix type checking, we only support static dimension checks, i.e., the dimensions of a matrix type can only be constant integers such as {\tt matrix[int][2,3]}. With dependent type support, we can introduce type checking for variable matrix dimensions. An example of what this can support is shown in Figure \ref{fig:variableDimensions}.
+
+\begin{figure}[h]
+    \begin{lstlisting}[language=octave]
+{n:int, m:int, p:int}
+function C:matrix[int][n,p] =
+        f(A:matrix[int][n,m], B:matrix[int][m,p])
+    # ...
+endfunction
+    \end{lstlisting}
+    \caption[]{{Matrix arguments with parametric dimensions}}
+    \label{fig:variableDimensions}
+\end{figure}
+
+With this, we can both allow the user to type check dimensions while also giving the user flexibility on what the dimension values will be. Users can also mix in static dimensions with dynamic dimensions. In that case, we will propose a syntax shown in Figure \ref{fig:variableAndStaticDimensions}.
+
+\begin{figure}[h]
+    \begin{lstlisting}[language=octave]
+{m:int, p:int}
+function C:matrix[int][5,p] = 
+        f(A:matrix[int][5,m], B:matrix[int][m,p])
+    # ...
+endfunction
+    \end{lstlisting}
+    \caption[]{{Matrix arguments with parametric and static dimensions}}
+    \label{fig:variableAndStaticDimensions}
+\end{figure}
+
+Additionally, we can add conditions in dependent types to further restrict the relations amongst parameters. We will propose a syntax like {\tt \{i:int|i < n\}} to represent a subset type of {\tt \{i:int\}} with additional constraints that the variable i is strictly less than the variable n. With this syntax, we can easily eliminate matrix boundary checks in a type-based approach, instead of checking them at runtime. We anticipate that this extension would largely enhance the performance of Octave programs because time-consuming runtime boundary checks are eliminated.
+
+By introducing dependent type support, we believe it will give programmers more flexibility while still ensuring type checking is in place. 
+
+\subsubsection{Performance Benchmark}
+Finally, we can compare the performance of the compiled version versus the generated code in untyped Octave. Currently, we generate the untyped Octave code from our internal AST as we believe that is the fastest way given we don't have an optimized compiler for Octave. If this project was extended, it would be ideal to have a compiler implemented. However, a compiler with no optimizations could end up being even slower than generating original code as complex programs would suffer from the slow runtime. In contrast, an optimized compiler will be non-trivial but we believe it will be faster than the original compiler for Octave source code in certain cases. With an optimized compiler, it can make use of the annotated types to do static type checks. This will allow the static regions to compile faster than the original compiler. For dynamic regions, it will either be similar in runtime or a little bit slower. This is due to the fact that the compiler will still have to do runtime checks and possibly have to do type casts with the annotated types added in. We believe this would be an interesting case to investigate to determine how beneficial it is to have an optimized compiler written for this project given it's difficulty. 
 
 \section{Concluding Remarks}
 Octave is an ideal candidate language as it is a well-known and relevant language, it benefits from the process of gradual typing and has many reference resources. In this proof of concept we provided an overview of the the stages of work we've implemented for the pre-processing as well as type-checking stages. For each stage, we elaborate on the respective tools used and steps taken to achieve certain inputs and outputs. We've also included snippets of the source code to reinforce users' understanding of how to recreate the proof-of-concept without serious difficulties in a tutorial-like format.

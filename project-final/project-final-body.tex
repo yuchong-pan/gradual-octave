@@ -132,7 +132,7 @@ Z = ["a" "b" "c"; "d" "e" "f"]
 \begin{lstlisting}[language=octave,numbers=none]
 function [x: int, y: string, z: bool] = circle3d(center: int, normal: int, radius: int)
  x = center + radius
- y = x - normal ## this should fail
+ y = x - normal # bad
  z = true
 endfunction
 [X, Y, Z] = circle3d(1, 2, 3);
