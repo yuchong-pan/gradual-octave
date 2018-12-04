@@ -20,9 +20,7 @@ In fact, there are also performance benefits to adopting a gradual typing approa
 \section{Matrix Type Checking}
 
 \subsection{Parsing}
-For parsing, we have updated the BNF file to handle the new syntax and have introduced a new matrixT AST type that can be parameterized with shape and type information.
-
-The updated language file can be found here: https://github.com/yuchong-pan/gradual-octave/blob/master/proof-of-concept/language.rkt
+For parsing, we have updated the BNF of the proposed type annotations to handle the new syntax and have introduced a new matrixT AST type that can be parameterized with shape and type information. The updated BNF can be found at \cite{yuchong2018gradual}.
 
 A point to note is that we treat matrix index operations the same as we do with function calls initially. For example, the following expression {\tt X = [1 2; 3 4]; X(1,1)} currently is treated exactly as a function application, though we are instead retrieving the element at index {\tt(1,1)}. In fact, we make no such distinction within the BNF itself between a function application and an indexing operation as they share the same syntactic form.
 
@@ -103,12 +101,12 @@ The codegen module in essence is a traversal over the AST that recursively conve
 As we were previously designing the AST, we did not account for code generation; thus, did not maintain a set of operator symbols for internal arithmetic and logical expressions. The functional information was only represented in an abstract manner using lambda functions. However, the updated AST for matrices described in the previous section allowed us to have sufficient context to generate the original operators being used.
 
 \subsection{Examples}
-The following are some examples of Gradual Octave source with their corresponding generated Octave using our code generation module:
+Figure \ref{fig:codegen} includes some examples of Gradual Octave source with their corresponding generated Octave using our code generation module.
 
 \lstset{
-  basicstyle=\ttfamily,
-  columns=fullflexible,
-  breaklines=true,
+    basicstyle=\ttfamily,
+    columns=fullflexible,
+    breaklines=true,
 }
 
 \begin{figure}[h]
@@ -116,37 +114,64 @@ The following are some examples of Gradual Octave source with their correspondin
 \hline
 Gradual Octave  &  Generated Octave \\
 \hline
-\begin{lstlisting}[language=octave,numbers=none]
-X : matrix[int][2,2] = [1 2; 3 4]
-Y : list[int] = [1 2 3]
-Y2 : matrix[int][1,3] = [1 2 3]
-Z : matrix[string][2,3] = ["a" "b" "c"; "d" "e" "f"]
-\end{lstlisting}&
-\begin{lstlisting}[language=octave,numbers=none]
+    {\begin{lstlisting}[language=octave, numbers=none]
+X:matrix[int][2,2]
+    = [1 2; 3 4]
+Y:list[int]
+    = [1 2 3]
+Y2:matrix[int][1,3]
+    = [1 2 3]
+Z:matrix[string][2,3]
+    = ["a" "b" "c";
+       "d" "e" "f"]
+    \end{lstlisting}} &
+    {\begin{lstlisting}[language=octave, numbers=none]
 X = [1 2; 3 4]
+
 Y = [1 2 3]
+
 Y2 = [1 2 3]
-Z = ["a" "b" "c"; "d" "e" "f"]
-\end{lstlisting} \\
+
+Z = ["a" "b" "c";
+     "d" "e" "f"]
+    \end{lstlisting}} \\
 \hline
-\begin{lstlisting}[language=octave,numbers=none]
-function [x: int, y: string, z: bool] = circle3d(center: int, normal: int, radius: int)
- x = center + radius
- y = x - normal ## this should fail
- z = true
+    {\begin{lstlisting}[language=octave, numbers=none]
+function [x:int,
+           y:string,
+           z:bool]
+    = circle3d(
+        center:int,
+        normal:int,
+        radius:int)
+  x = center + radius
+  y = "circle"
+  z = true
 endfunction
-[X, Y, Z] = circle3d(1, 2, 3);
-\end{lstlisting}&
-\begin{lstlisting}[language=octave,numbers=none]
-function [x, y, z] = circle3d(center, normal, radius)
-    x = center+radius
-    y = x-normal
-    z = true
+
+[X, Y, Z]
+    = circle3d(1, 2, 3)
+    \end{lstlisting}} &
+    {\begin{lstlisting}[language=octave, numbers=none]
+function [x, y, z]
+    = circle3d(center,
+                normal,
+                radius)
+  x = center + radius
+  y = "circle"
+  z = true
 endfunction
-[X, Y, Z] = circle3d(1, 2, 3)
-\end{lstlisting} \\
+
+
+
+
+[X, Y, Z]
+    = circle3d(1, 2, 3)
+    \end{lstlisting}} \\
 \hline
 \end{tabular}
+\caption{Code generation examples}
+\label{fig:codegen}
 \end{figure}
 
 As depicted above, the outputs strip typing information from the typed syntax so that it is compatible with the original Octave interpreter.
