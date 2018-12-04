@@ -39,7 +39,7 @@ To type check matrices, we first need to adapt the type consistency rules for th
     ;; ...
     [`(,(matrix element-type1 n1 m1)
        ,(matrix element-type2 n2 m2))
-     (and (equal? element-type1 element-type2)
+     (and (consistent? element-type1 element-type2)
           (= n1 n2)
           (= m1 m2))]))
     \end{lstlisting}
@@ -47,49 +47,50 @@ To type check matrices, we first need to adapt the type consistency rules for th
     \label{fig:typeconsistency}
 \end{figure}
 
-As noted above, we have modified our abstract syntax tree structure to make it more suitable for the same operation on different types. Therefore, we merely need to perform case analysis when type-checking each operation. For instance, for the {\tt *} operation, we have cases where both operands are integers/strings/Booleans and where both operands are matrices. In the latter case, we then need to perform additional type checking to determine if the dimensions of the two operands match; i.e., we will check if the types of the two operands are of the form {\tt matrix[T][n, m]} and {\tt matrix[T][m, p]}, where {\tt n}, {\tt m} and {\tt p} are constant integers and {\tt T} is a type parameter. The type checker for the {\tt *} operation is illustrated by the code snippet in Figure \ref{fig:typecheck-op*}. Here, the function meet illustrated in Figure \ref{fig:meet} computes the meet of the two types, i.e., the greater lower bound of the two types, where the relation is the "less or equally dynamic" relation \cite{siek2012interpretations}.
-
+As noted above, we have modified our abstract syntax tree structure to make it more suitable for the same operation on different types. Therefore, we merely need to perform case analysis when type-checking each operation. For instance, for the {\tt *} operation, we have cases where both operands are integers/strings/Booleans and where both operands are matrices. In the latter case, we then need to perform additional type checking to determine if the dimensions of the two operands match; i.e., we will check if the types of the two operands are of the form {\tt matrix[T][n, m]} and {\tt matrix[T][m, p]}, where {\tt n}, {\tt m} and {\tt p} are constant integers and {\tt T} is a type parameter. The type checker for the {\tt *} operation is illustrated by the code snippet in Figure \ref{fig:typecheck-op*}. Here, the function meet illustrated in Figure \ref{fig:meet} computes the meet of the two types, i.e., the greater lower bound of the two types, where the relation is the ``less or equally dynamic'' relation \cite{siek2012interpretations}.
+ 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
 (define (typecheck-op* e)
-    (local [(define lhs (op+-lhs e))
-            (define rhs (op+-rhs e))
-            (define lhs-type (typecheck-expr lhs))
-            (define rhs-type (typecheck-expr rhs))]
-        (match `(,lhs-type ,rhs-type)
-            [`(int int) int]
-            ;; ...
-            [`(,(matrix element-type1 n1 m1)
-               ,(matrix element-type2 n2 m2))
-               (if (and (equal? element-type1 element-type2)
-                        (= m1 n2))
-                  (matrix (meet element-type1 element-type2)
-                          n1
-                          m2)
-                  (error 'typecheck-op* "..."))])))
+  (local [(define lhs (op*-lhs e))
+          (define rhs (op*-rhs e))
+          (define ltype (typecheck-expr lhs))
+          (define rtype (typecheck-expr rhs))]
+      (match `(,ltype ,rtype)
+        [`(int int) int]
+        ;; ...
+        [`(,(matrix type1 n1 m1)
+           ,(matrix type2 n2 m2))
+           (if (and (equal? type1 type2)
+                    (= m1 n2))
+               (matrix (meet type1 type2)
+                       n1
+                       m2)
+               (error 'typecheck-op* "..."))])))
     \end{lstlisting}
-    \caption[]{{typecheck-op*}}
+    \caption[]{Helper function to type-check the multiplication operation}
     \label{fig:typecheck-op*}
 \end{figure}
 
 \begin{figure}[h]
     \begin{lstlisting}[language=racket]
 (define (meet T1 T2)
-   (match `(,T1 ,T2)
-       [`(T1 dynamic) T1]
-       [`(dynamic T2) T2]
-       [`(,(arrow T1-dom T1-cod)
-          ,(arrow T2-dom T2-cod))
-        (arrow (map meet T1-dom T2-dom)
-                   (map meet T1-cod T2-cod))]
-       [`(,(matrix element-type1 n1 m1)
-          ,(matrix element-type2 n2 m2))
-        (and (equal? element-type1 element-type2)
-                (= n1 n2)
-                (= m1 m2))]
-        [else (equal? T1 T2)]))
+  (match `(,T1 ,T2)
+    [`(T1 dynamic) T1]
+    [`(dynamic T2) T2]
+    [`(,(arrow T1-dom T1-cod)
+       ,(arrow T2-dom T2-cod))
+     (arrow (map meet T1-dom T2-dom)
+                (map meet T1-cod T2-cod))]
+    [`(,(matrix element-type1 n1 m1)
+       ,(matrix element-type2 n2 m2))
+     (and (equal? element-type1 element-type2)
+          (= n1 n2)
+          (= m1 m2))]
+    [(equal? T1 T2) T1]
+    [else (error 'meet "...")]))
     \end{lstlisting}
-    \caption[]{{meet}}
+    \caption[]{Helper function to compute the meet of two types}
     \label{fig:meet}
 \end{figure}
 
@@ -120,42 +121,40 @@ Moreover, we can support type inference in our gradual extension to Octave, in o
 \subsection{Dependent Type Support}
 Second, we can develop a dependent type support for boundary checks. The idea was first proposed by \citet{xi1998eliminating}, and our syntax design is similar to the syntax provided in that paper. Moreover, interoperability between gradual typing and dependent types was discussed by \citet{lehmann2017gradual}.
 
-Currently, with our matrix type checking, we only support static dimension checks, i.e., the dimensions of a matrix type can only be constant integers such as {\tt matrix[int][2,3]}. With dependent type support, we can introduce type checking for variable matrix dimensions. An example of what this can support is shown in Figure \ref{fig:variableDimensions}
+Currently, with our matrix type checking, we only support static dimension checks, i.e., the dimensions of a matrix type can only be constant integers such as {\tt matrix[int][2,3]}. With dependent type support, we can introduce type checking for variable matrix dimensions. An example of what this can support is shown in Figure \ref{fig:variableDimensions}.
 
 \begin{figure}[h]
-    \begin{lstlisting}[language=racket]
+    \begin{lstlisting}[language=octave]
 {n:int, m:int, p:int}
-function C : matrix [int][n,p] = 
-    f(A : matrix [int][n,m], B : matrix[int][m,p])
-	...
+function C:matrix[int][n,p] =
+        f(A:matrix[int][n,m], B:matrix[int][m,p])
+    # ...
 endfunction
     \end{lstlisting}
-    \caption[]{{Matrix With Variable Dimensions}}
+    \caption[]{{Matrix arguments with parametric dimensions}}
     \label{fig:variableDimensions}
 \end{figure}
 
-With this, we can both allow the user to type check dimensions while also giving the user flexibility on what the dimension values will be. Users can also mix in static dimensions with dynamic dimensions. In that case, we will propose a syntax shown in Figure \ref{fig:variableAndStaticDimensions}
+With this, we can both allow the user to type check dimensions while also giving the user flexibility on what the dimension values will be. Users can also mix in static dimensions with dynamic dimensions. In that case, we will propose a syntax shown in Figure \ref{fig:variableAndStaticDimensions}.
 
 \begin{figure}[h]
-    \begin{lstlisting}[language=racket]
+    \begin{lstlisting}[language=octave]
 {m:int, p:int}
-function C : matrix [int][5,p] = 
-    f(A : matrix [int][5,m], B : matrix[int][m,p])
-	...
+function C:matrix[int][5,p] = 
+        f(A:matrix[int][5,m], B:matrix[int][m,p])
+    # ...
 endfunction
     \end{lstlisting}
-    \caption[]{{Matrix With Variable and Static Dimensions}}
+    \caption[]{{Matrix arguments with parametric and static dimensions}}
     \label{fig:variableAndStaticDimensions}
 \end{figure}
 
-Additionally, we can add conditions in dependent types to further restrict the relations amongst parameters. We will propose a syntax like {\tt i:int | i < n} to represent a subset type of {\tt i:int} with additional constraints that the variable i is strictly less than the variable n. With this syntax, we can easily eliminate matrix boundary checks in a type-based approach, instead of checking them at runtime. We anticipate that this extension would largely enhance the performance of Octave programs because time-consuming runtime boundary checks are eliminated.
+Additionally, we can add conditions in dependent types to further restrict the relations amongst parameters. We will propose a syntax like {\tt \{i:int|i < n\}} to represent a subset type of {\tt \{i:int\}} with additional constraints that the variable i is strictly less than the variable n. With this syntax, we can easily eliminate matrix boundary checks in a type-based approach, instead of checking them at runtime. We anticipate that this extension would largely enhance the performance of Octave programs because time-consuming runtime boundary checks are eliminated.
 
 By introducing dependent type support, we believe it will give programmers more flexibility while still ensuring type checking is in place. 
 
 \subsection{Performance Benchmark}
 Finally, we can compare the performance of the compiled version versus the generated code in untyped Octave. Currently, we generate the untyped Octave code from our internal AST as we believe that is the fastest way given we don't have an optimized compiler for Octave. If this project was extended, it would be ideal to have a compiler implemented. However, a compiler with no optimizations could end up being even slower than generating original code as complex programs would suffer from the slow runtime. In contrast, an optimized compiler will be non-trivial but we believe it will be faster than the original compiler for Octave source code in certain cases. With an optimized compiler, it can make use of the annotated types to do static type checks. This will allow the static regions to compile faster than the original compiler. For dynamic regions, it will either be similar in runtime or a little bit slower. This is due to the fact that the compiler will still have to do runtime checks and possibly have to do type casts with the annotated types added in. We believe this would be an interesting case to investigate to determine how beneficial it is to have an optimized compiler written for this project given it's difficulty. 
-
-We hope to create a meaningful and useful tool for Octave developers to use and ideally contribute towards in the future.
 
 \section{Concluding Remarks}
 In this report we have provided motivation for our proposed project of introducing gradual typing to Octave. We contend that Octave is an ideal candidate language as it is a well-known and relevant language, it benefits from the process of gradual typing and has many reference resources. Additionally, we show that through gradual typing, benefits of both static and dynamic typing systems can be incorporated efficiently and to enable program evolution. We further discuss gradual typing and claim that our project is unique and is meaningful within the larger context. The objective for this project is to develop a gradually-typed variant for Octave that sufficiently expresses the basic data types of the language. We believe that the flexible nature of gradual typing offers great value to data scientists and various users of Octave in that it remains an effective prototyping tool while optionally providing compile-time type and invariant assertions. To achieve this, we initially based our prototypes for static semantics on the existing literature described above. Additionally, we now enrich and further introduce nuances into our gradual typing scheme by delving into features such as static dimension checking (as matrices are a core component of the language domain) and code generation. We hope we have created a meaningful and useful tool for Octave developers to use and ideally be able to further contribute towards this project's reach goals.
@@ -163,6 +162,5 @@ In this report we have provided motivation for our proposed project of introduci
 \appendix
 
 \begin{acks}
-    The authors would like to thank the course staff of CPSC 311 at University
-    of British Columbia for their feedback.
+    The authors would like to thank the course staff of CPSC 311 at University of British Columbia for their feedback. In particular, the authors would like to thank Steve Wolfman for the opportunity to create this project, and to thank the project coordinator Sam Chow and other anonymous graders for their suggestions for improvement of this project.
 \end{acks}
