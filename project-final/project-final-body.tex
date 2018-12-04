@@ -20,7 +20,7 @@ In fact, there are also performance benefits to adopting a gradual typing approa
 \section{Matrix Type Checking}
 
 \subsection{Parsing}
-For parsing, we have updated the BNF of the proposed type annotations to handle the new syntax and have introduced a new matrixT AST type that can be parameterized with shape and type information. The updated BNF can be found at \cite{yuchong2018gradual}.
+For parsing, we have updated the BNF of the proposed type annotations to handle the new syntax and have introduced a new {\tt matrix} AST type that can be parameterized with shape and type information. The updated BNF can be found at \cite{yuchong2018gradual}.
 
 A point to note is that we treat matrix index operations the same as we do with function calls initially. For example, the following expression {\tt X = [1 2; 3 4]; X(1,1)} currently is treated exactly as a function application, though we are instead retrieving the element at index {\tt(1,1)}. In fact, we make no such distinction within the BNF itself between a function application and an indexing operation as they share the same syntactic form.
 
